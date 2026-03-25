@@ -96,7 +96,7 @@ const BottomNavbar = React.memo(({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg pointer-events-none">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg pointer-events-none transform-gpu will-change-transform">
       <div className="bg-gray-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center justify-around pointer-events-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
