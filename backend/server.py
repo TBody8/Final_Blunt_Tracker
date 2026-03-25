@@ -86,6 +86,8 @@ class Settings(BaseModel):
 @api_router.get("/consumption", response_model=List[ConsumptionData])
 async def get_consumption_data(username: str = Depends(get_current_username)):
     try:
+        cursor = consumption_collection.find({"username": username}).sort("date", -1)
+        data = await cursor.to_list(length=1000)
         return [ConsumptionData(**item) for item in data]
     except Exception as e:
         logging.error(f"Error fetching consumption data: {str(e)}")
