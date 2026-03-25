@@ -8,16 +8,16 @@
     "background_color": "#000000",
     "icons": [
         {
+            "src": "/fav.png",
+            "sizes": "192x192 512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
             "src": "/fav.jpg",
             "sizes": "192x192 512x512 1024x1024 2048x2048",
             "type": "image/jpeg",
             "purpose": "any"
-        },
-        {
-            "src": "/Hoja_Fondo.png",
-            "sizes": "192x192 512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
         }
     ],
     "shortcuts": [
@@ -28,7 +28,7 @@
             "url": "/?quickadd=blunt",
             "icons": [
                 {
-                    "src": "/Hoja_Fondo.png",
+                    "src": "public/Hoja_Fondo.png",
                     "sizes": "96x96 128x128 144x144 192x192 512x512",
                     "type": "image/png",
                     "purpose": "any"
