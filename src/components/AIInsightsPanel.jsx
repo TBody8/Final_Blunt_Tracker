@@ -99,8 +99,8 @@ const AIInsightsPanel = memo(
                 {insights.patterns.bluntTolerancePattern.level}
               </p>
               <p className='text-xs text-gray-500'>
-                {insights.patterns.bluntTolerancePattern.averageDaily}
-                avg/day
+                {insights.patterns.bluntTolerancePattern.averageWeekly}
+                avg/week
               </p>
             </motion.div>
 

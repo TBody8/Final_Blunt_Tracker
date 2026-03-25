@@ -1,0 +1,29 @@
+﻿{
+    "totalBluntsCount":  25,
+    "topSpot":  null,
+    "totalBlunts":  25,
+    "username":  "diego3",
+    "maxStreak":  2,
+    "currentStreak":  2,
+    "activeDays":  4,
+    "topBuddies":  [
+                       {
+                           "username":  "Diego3",
+                           "sessions":  14
+                       }
+                   ],
+    "optional_achievements":  [
+                                  {
+                                      "id":  "fat_blunt",
+                                      "icon":  "ðªµ",
+                                      "name":  "El Gordo",
+                                      "priority":  4
+                                  },
+                                  {
+                                      "id":  "chimney",
+                                      "icon":  "ð­",
+                                      "name":  "La Chimenea",
+                                      "priority":  6
+                                  }
+                              ]
+}

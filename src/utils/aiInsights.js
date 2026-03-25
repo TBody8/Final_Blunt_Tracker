@@ -93,28 +93,39 @@ class AIInsightsEngine {
 
   analyzeBluntTolerancePattern(data) {
     const totalBlunts = data.reduce((sum, day) => sum + (day.blunts || []).length, 0);
-    const totalDays = data.length;
-    const averageDaily = totalDays > 0 ? totalBlunts / totalDays : 0;
+    
+    // Calculate weeks since the very first session for true historical average
+    let totalWeeks = 1;
+    if (data.length > 0) {
+      const dates = data.map(d => new Date(d.date)).sort((a,b) => a-b);
+      const firstDate = dates[0];
+      const today = new Date();
+      const diffDays = Math.ceil((today - firstDate) / (1000 * 60 * 60 * 24));
+      totalWeeks = Math.max(1, diffDays / 7);
+    }
+
+    const averageWeekly = totalBlunts / totalWeeks;
 
     let toleranceLevel = 'Low';
     let recommendation = 'Maintain current vibes';
 
-    if (averageDaily > 5) {
+    // Adjusted thresholds for Weekly Consumption
+    if (averageWeekly > 35) {
       toleranceLevel = 'OG Smoker';
-      recommendation = 'Major tolerance detected. Consider a T-Break to reset your levels.';
-    } else if (averageDaily > 2) {
+      recommendation = 'Major weekly tolerance detected. Consider a T-Break to reset your levels.';
+    } else if (averageWeekly > 14) {
       toleranceLevel = 'Regular';
-      recommendation = 'Chilled pace, but watch your productivity levels!';
-    } else if (averageDaily > 0) {
+      recommendation = 'Chilled pace, but watch your weekly productivity!';
+    } else if (averageWeekly > 0) {
       toleranceLevel = 'Social';
-      recommendation = 'Perfect social balance. Keep it light!';
+      recommendation = 'Perfect weekly balance. Keep it light!';
     }
 
     return {
       level: toleranceLevel,
-      averageDaily: averageDaily.toFixed(1),
+      averageWeekly: averageWeekly.toFixed(1),
       recommendation,
-      riskLevel: this.calculateRiskLevel(averageDaily)
+      riskLevel: this.calculateRiskLevel(averageWeekly / 7) 
     };
   }
 
@@ -271,8 +282,8 @@ export const detectConsumptionAnomalies = (consumptionData) => {
   
   if (historical.length < 7) return null;
   
-  const recentAvg = recent.reduce((sum, day) => sum + day.drinks.length, 0) / recent.length;
-  const historicalAvg = historical.reduce((sum, day) => sum + day.drinks.length, 0) / historical.length;
+  const recentAvg = recent.reduce((sum, day) => sum + (day.blunts || []).length, 0); // Total this week
+  const historicalAvg = historical.reduce((sum, day) => sum + (day.blunts || []).length, 0) / (historical.length / 7 || 1); // Weekly avg of past
   
   const change = ((recentAvg - historicalAvg) / historicalAvg) * 100;
   

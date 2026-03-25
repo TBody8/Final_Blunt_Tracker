@@ -1,8 +1,16 @@
 
 import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Menu, X } from 'lucide-react';
-import { Flame } from 'lucide-react'; // Added Flame icon for the new button
+import { 
+  Settings as SettingsIcon, 
+  Menu, 
+  X, 
+  Star, 
+  MapPin, 
+  Coins, 
+  LogOut,
+  Flame 
+} from 'lucide-react';
 import './App.css';
 import * as mockData from './data/mockData';
 import Loader from './components/ui/Loader';
@@ -194,8 +202,9 @@ function App() {
   const refreshUserRank = useCallback(() => {
     if (!user) return;
     const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-    fetch(`${backendUrl}/api/leaderboard`, {
-      credentials: 'include'
+    fetch(`${backendUrl}/api/leaderboard?t=${Date.now()}`, {
+      credentials: 'include',
+      cache: 'no-store'
     })
       .then(res => res.ok ? res.json() : [])
       .then(leaderboard => {
@@ -516,9 +525,9 @@ function App() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
-        <div className='max-w-7xl mx-auto flex justify-between items-center'>
-          <motion.div className='flex flex-col items-start pt-2 pr-12 md:pr-0'>
-            <div className="relative z-0 h-16 md:h-20 w-[calc(100vw-100px)] md:w-[60vw] max-w-[450px] overflow-visible">
+        <div className='max-w-7xl mx-auto flex justify-between items-end'>
+          <motion.div className='flex flex-col items-start pt-2'>
+            <div className="relative z-0 h-16 md:h-20 w-[calc(100vw-140px)] md:w-[60vw] max-w-[450px] overflow-visible">
               <svg 
                 className='w-full h-full overflow-visible' 
                 viewBox="0 0 420 100" 
@@ -532,23 +541,26 @@ function App() {
                     <stop offset="100%" stopColor="#9ca3af" />
                   </linearGradient>
                 </defs>
-                {"Blunt Tracker".split('').map((char, index) => (
-                  <motion.text
-                    key={index}
-                    x={index * 32}
-                    y="65"
-                    className="smoke-char-svg"
-                    style={{ 
-                      '--delay': `${index * 0.15}s`,
-                      fontFamily: "'Ruthless', cursive",
-                      fill: "url(#blunt-metal-grad)",
-                      fontSize: "48px",
-                      fontWeight: "normal"
-                    }}
-                  >
-                    {char}
-                  </motion.text>
-                ))}
+                {(() => {
+                  const offsets = [0, 48, 75, 108, 142, 170, 205, 248, 280, 315, 350, 385, 415];
+                  return "Blunt Tracker".split('').map((char, index) => (
+                    <motion.text
+                      key={index}
+                      x={offsets[index]}
+                      y="65"
+                      className="smoke-char-svg"
+                      style={{ 
+                        '--delay': `${index * 0.15}s`,
+                        fontFamily: "'Ruthless', cursive",
+                        fill: "url(#blunt-metal-grad)",
+                        fontSize: "48px",
+                           fontWeight: "normal"
+                      }}
+                    >
+                      {char}
+                    </motion.text>
+                  ));
+                })()}
               </svg>
             </div>
             
@@ -579,39 +591,55 @@ function App() {
               </motion.div>
             )}
           </motion.div>
+           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Desktop Navigation */}
+            <nav className='hidden md:flex items-center gap-6'>
+              <button
+                onClick={() => setShowWrapped(true)}
+                className='relative group overflow-hidden bg-gradient-to-r from-green-600 to-green-500 p-[2px] rounded-full'
+              >
+                <div className='absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine' />
+                <div className='bg-gray-900 rounded-full px-6 py-2 flex items-center gap-2 transition-all hover:bg-gray-900/80'>
+                  <Flame className='w-4 h-4 text-green-400' />
+                  <span className='font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-300'>
+                    Blunt Wrapped
+                  </span>
+                </div>
+              </button>
+              <motion.button
+                onClick={() => setShowSettings(true)}
+                className='p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-300 hover:scale-105'
+                initial={{ opacity: 0, rotate: -10 }}
+                animate={{ opacity: 1, rotate: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                whileHover={{ scale: 1.1, rotate: 10 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <SettingsIcon className='w-6 h-6' />
+              </motion.button>
+            </nav>
 
-          {/* Desktop Navigation */}
-          <nav className='hidden md:flex items-center gap-6'>
-            <button
-              onClick={() => setShowWrapped(true)}
-              className='relative group overflow-hidden bg-gradient-to-r from-green-600 to-green-500 p-[2px] rounded-full'
-            >
-              <div className='absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine' />
-              <div className='bg-gray-900 rounded-full px-6 py-2 flex items-center gap-2 transition-all hover:bg-gray-900/80'>
-                <Flame className='w-4 h-4 text-green-400' />
-                <span className='font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-300'>
-                  Blunt Wrapped
-                </span>
-              </div>
-            </button>
+            {/* Universal Logout Button */}
             <motion.button
-              onClick={() => setShowSettings(true)}
-              className='p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-300 hover:scale-105'
-              initial={{ opacity: 0, rotate: -10 }}
-              animate={{ opacity: 1, rotate: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              whileHover={{ scale: 1.1, rotate: 10 }}
+              onClick={handleLogout}
+              className="group flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all duration-300 transform-gpu z-20 mr-12"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <LogOut className="w-4 h-4 text-red-500 group-hover:rotate-12 transition-transform" />
+              <span className="text-[10px] sm:text-xs font-black uppercase text-red-500 tracking-widest hidden xs:block">Log Out</span>
+            </motion.button>
+
+            {/* Mobile Menu Icon (No circle) */}
+            <motion.button
+              onClick={() => setShowHamburger(true)}
+              className="p-2 text-green-400 hover:text-green-300 md:hidden z-20"
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <SettingsIcon className='w-6 h-6' />
+              <Menu className='w-7 h-7' />
             </motion.button>
-            <button
-              onClick={handleLogout}
-              className='ml-4 px-3 py-2 bg-gray-800 text-white rounded hover:bg-red-600 transition'
-            >
-              Logout
-            </button>
-          </nav>
+          </div>
         </div>
       </motion.header>
 
@@ -633,6 +661,7 @@ function App() {
               selectedDrinks={selectedDrinks}
               currentUser={user.username}
               leaderboardData={leaderboardData}
+              onRefreshLeaderboard={refreshUserRank}
             />
           </Suspense>
         </motion.div>
@@ -685,29 +714,6 @@ function App() {
           />
         </Suspense>
       )}
-      <button
-        className={`fixed top-6 right-6 p-3 border rounded-full shadow-lg transition-all duration-300 md:hidden z-10 ${
-          showHamburger || showSettings || activeIAModal === 'partyMeter'
-            ? 'backdrop-blur-sm brightness-75 scale-95 border-green-500/30 bg-gray-900/80'
-            : isWrappedActive
-              ? 'bg-yellow-500/10 border-yellow-400/50 shadow-[0_0_15px_rgba(250,204,21,0.4)] animate-slow-pulse'
-              : 'border-green-500/30 bg-gray-900/80'
-        }`}
-        onClick={() => {
-          if (
-            !(showHamburger || showSettings || activeIAModal === 'partyMeter')
-          ) {
-            setShowHamburger(true);
-          }
-        }}
-        aria-label='Abrir menú'
-        style={{ display: 'flex', alignItems: 'center' }} // z-10 for below modal
-        disabled={
-          showHamburger || showSettings || activeIAModal === 'partyMeter'
-        }
-      >
-        <Menu className='w-7 h-7 text-green-400' />
-      </button>
       <HamburgerMenu
         open={showHamburger}
         onClose={() => setShowHamburger(false)}

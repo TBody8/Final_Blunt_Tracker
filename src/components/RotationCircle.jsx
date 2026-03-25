@@ -36,6 +36,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
   const [showSpotDropdown, setShowSpotDropdown] = useState(false);
   
   const [isLighterActive, setIsLighterActive] = useState(false);
+  const [showDeleteUser, setShowDeleteUser] = useState(null); // Fix for mobile touch tracking
   const [weight, setWeight] = useState(() => {
     const saved = localStorage.getItem('bluntRotationData');
     if (saved) {
@@ -205,8 +206,6 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
   const togglePayingUser = (userName) => {
     setPayingUsers(prev => {
       if (prev.includes(userName)) {
-        // Don't allow 0 payers if there are users
-        if (prev.length === 1 && rotationUsers.length > 0) return prev;
         return prev.filter(u => u !== userName);
       } else {
         return [...prev, userName];
@@ -280,7 +279,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
       // Calculate position around the circle
       // Primary user is always at the top (idx 0, so angle = -90deg or 270deg)
       const angle = (index * (360 / total)) - 90; 
-      const radius = 135; // Reduced from 160 to prevent edge clipping
+      const radius = 105; // Reduced from 135 to tighten orbit
       const x = Math.cos(angle * (Math.PI / 180)) * radius;
       const y = Math.sin(angle * (Math.PI / 180)) * radius;
 
@@ -300,32 +299,40 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
             originY: 0.5,
             left: "50%",
             top: "50%",
-            marginLeft: "-2rem", // Half width
-            marginTop: "-2rem",  // Half height
+            marginLeft: "-1.5rem", // Half width
+            marginTop: "-1.5rem",  // Half height
           }}
         >
           <div className="relative group">
             <motion.div 
-              onClick={() => togglePayingUser(user)}
-              className={`w-16 h-16 rounded-full flex items-center justify-center border-2 shadow-lg backdrop-blur-sm cursor-pointer transition-all
-                ${isPayer ? 'bg-green-600/30 border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.4)]' : 'bg-gray-800/80 border-gray-600'}
-                ${isMe && !isPayer ? 'border-green-800/50' : ''}
+              onClick={() => {
+                togglePayingUser(user);
+                // Guarantee the X is locked on screen for mobile tap deletion
+                setShowDeleteUser(prev => prev === user ? null : user);
+              }}
+              onHoverStart={() => setShowDeleteUser(user)}
+              onHoverEnd={() => setShowDeleteUser(null)}
+              className={`w-12 h-12 rounded-full flex items-center justify-center border-2 shadow-lg backdrop-blur-sm cursor-pointer transition duration-300 transform-gpu
+                ${isPayer 
+                  ? 'border-green-400 bg-green-900/40 shadow-[0_0_15px_rgba(74,222,128,0.3)] ring-2 ring-green-500/50' 
+                  : 'border-white/20 bg-gray-900/60 hover:border-white/40'
+                }
               `}>
-              <Users className={`w-6 h-6 ${isPayer ? 'text-green-300' : 'text-gray-400'}`} />
+              <Users className={`w-5 h-5 ${isPayer ? 'text-green-300' : 'text-gray-400'}`} />
               
               {isPayer && (
                 <motion.div 
                   initial={{ scale: 0 }} 
                   animate={{ scale: 1 }} 
-                  className="absolute -top-1 -left-1 bg-[#FFD700] rounded-full p-1 shadow-md border border-yellow-200"
+                  className="absolute -top-1 -left-1 bg-[#FFD700] rounded-full p-0.5 shadow-md border border-yellow-200"
                 >
-                  <Euro className="w-3 h-3 text-black" />
+                  <Euro className="w-2.5 h-2.5 text-black" />
                 </motion.div>
               )}
             </motion.div>
             
-            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded bg-black/60 backdrop-blur-md 
+            <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md 
                 ${isPayer ? 'text-green-400 border border-green-500/30' : 'text-gray-300'}`}>
                 {isMe ? 'You' : user}
               </span>
@@ -333,10 +340,16 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
 
             {!isMe && (
               <button 
-                onClick={() => handleRemoveUser(user)}
-                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveUser(user);
+                  setShowDeleteUser(null);
+                }}
+                className={`absolute -top-1 -right-1 bg-red-500 hover:bg-red-400 text-white rounded-full w-[20px] h-[20px] flex items-center justify-center transition-opacity shadow-md z-[60] outline-none touch-manipulation
+                  ${showDeleteUser === user ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`}
+                title="Remove user"
               >
-                <X className="w-3 h-3" />
+                <X className="w-2.5 h-2.5" />
               </button>
             )}
           </div>
@@ -346,23 +359,23 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-4 md:p-6 border border-green-500/20 shadow-[0_0_30px_rgba(0,255,65,0.1)] relative overflow-visible">
+    <div className="w-full bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-[24px] md:rounded-3xl p-3 md:p-5 border border-green-500/20 shadow-[0_0_30px_rgba(0,255,65,0.1)] relative overflow-visible">
       
       {/* Background decoration */}
       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
         <Flame className="w-64 h-64 text-green-500 transform rotate-12" />
       </div>
 
-      <div className="relative z-10 flex flex-col md:flex-row gap-6 items-center justify-between min-h-[400px]">
+      <div className="relative z-10 flex flex-col md:flex-row gap-4 items-center justify-between min-h-[300px]">
         
         {/* Left Side: Controls (Compact) */}
-        <div className="w-full md:w-1/3 flex flex-col space-y-4">
+        <div className="w-full md:w-1/3 flex flex-col space-y-3">
           <div className="flex justify-between items-start">
             <div>
               <h2 className="blunt-title text-2xl md:text-3xl">
                 Blunt Rotation
               </h2>
-              <p className="text-gray-400 text-[10px] md:text-xs mt-1">Add homies, spark it.</p>
+              <p className="text-gray-400 text-[10px] uppercase tracking-wider mt-0.5">Add homies, spark it.</p>
             </div>
           </div>
 
@@ -377,26 +390,26 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
                   placeholder="Username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-950/80 border border-gray-700 rounded-lg py-2 pl-9 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-all backdrop-blur-sm"
+                className="w-full bg-gray-950/80 border border-gray-700 rounded-lg py-1.5 pl-8 pr-10 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors transform-gpu backdrop-blur-sm"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
-              <button type="submit" className="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-green-600 p-1 rounded-md text-white hover:bg-green-500 transition-colors">
-                <Plus className="w-4 h-4" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500 w-3.5 h-3.5" />
+              <button type="submit" className="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-green-600 p-1 rounded text-white hover:bg-green-500 transition-colors">
+                <Plus className="w-3.5 h-3.5" />
               </button>
             </form>
             
             {/* Auto-complete Dropdown */}
             {showDropdown && (searchResults.length > 0 || isSearching) && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 text-sm">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 text-xs">
                 {isSearching && searchResults.length === 0 ? (
-                  <div className="px-3 py-3 text-gray-500 text-xs italic flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+                  <div className="px-3 py-2 text-gray-500 text-[10px] italic flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />
                     Finding homies...
                   </div>
                 ) : (
                   <>
                     {!searchQuery.trim() && (
-                      <div className="px-3 py-1 text-[10px] text-gray-500 font-bold border-b border-gray-800">SUGGESTED</div>
+                      <div className="px-3 py-1 text-[9px] text-gray-500 font-bold border-b border-gray-800">SUGGESTED</div>
                     )}
                     {searchResults.map(user => (
                       <div 
@@ -404,7 +417,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
                         onMouseDown={(e) => e.preventDefault()} // Prevent blur before click on desktop
                         onTouchStart={(e) => e.preventDefault()} // Prevent blur before tap on mobile
                         onClick={() => handleAddUser(null, user)}
-                        className="px-3 py-2 hover:bg-green-500/10 cursor-pointer flex justify-between items-center transition-colors border-b border-gray-800/50 last:border-0"
+                        className="px-3 py-1.5 hover:bg-green-500/10 cursor-pointer flex justify-between items-center transition-colors border-b border-gray-800/50 last:border-0"
                       >
                         <span className="text-white font-medium">{user}</span>
                         <Plus className="w-3 h-3 text-green-500 opacity-50" />
@@ -419,7 +432,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
             )}
           </div>
 
-          <div className="pt-2 flex flex-col space-y-4">
+          <div className="pt-0.5 flex flex-col space-y-3">
             <div className="relative z-40">
               <MapPin className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 z-10" />
               <input 
@@ -430,14 +443,14 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
                 placeholder="Spot"
                 value={spot}
                 onChange={(e) => setSpot(e.target.value)}
-                className="w-full bg-gray-950/80 border border-gray-700 rounded-lg py-2 pl-8 pr-2 text-xs text-gray-300 placeholder-gray-500 focus:outline-none focus:border-green-500/50 transition-all font-medium relative z-10"
+                className="w-full bg-gray-950/80 border border-gray-700 rounded-lg py-1.5 pl-7 pr-2 text-xs text-gray-300 placeholder-gray-500 focus:outline-none focus:border-green-500/50 transition-colors transform-gpu font-medium relative z-10"
               />
               
               {/* Spot Auto-complete Dropdown */}
               {showSpotDropdown && (spotSearchResults.length > 0 || isSearchingSpot) && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 text-xs">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 text-[11px]">
                   {isSearchingSpot && spotSearchResults.length === 0 ? (
-                    <div className="px-3 py-2 text-gray-500 text-[10px] italic flex items-center gap-2">
+                    <div className="px-3 py-2 text-gray-500 text-[9px] italic flex items-center gap-2">
                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping" />
                        Loading spots...
                     </div>
@@ -455,7 +468,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
                               setSpot(s);
                               setShowSpotDropdown(false);
                           }}
-                          className="px-3 py-2 hover:bg-blue-500/10 cursor-pointer flex justify-between items-center transition-colors border-b border-gray-800/50 last:border-0"
+                          className="px-3 py-1.5 hover:bg-blue-500/10 cursor-pointer flex justify-between items-center transition-colors border-b border-gray-800/50 last:border-0"
                         >
                           <span className="text-gray-300 font-medium capitalize">{s}</span>
                           <MapPin className="w-3 h-3 text-blue-500 opacity-50" />
@@ -467,10 +480,10 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
               )}
             </div>
 
-            <div className="bg-gray-900/50 p-3 rounded-xl border border-gray-800 space-y-2">
-               <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-gray-500 font-bold">
+            <div className="bg-gray-900/50 p-2.5 rounded-xl border border-gray-800 space-y-1.5">
+               <div className="flex justify-between items-center text-[9px] uppercase tracking-wider text-gray-500 font-bold">
                  <span>Blunt Weight</span>
-                 <span className="text-green-400 text-sm">{weight.toFixed(2)}g</span>
+                 <span className="text-green-400 text-xs">{weight.toFixed(2)}g</span>
                </div>
                <input 
                 type="range"
@@ -479,25 +492,25 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
                 step="0.05"
                 value={weight}
                 onChange={(e) => setWeight(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-green-500"
+                className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-green-500"
                />
-               <div className="flex justify-between text-[8px] text-gray-600 px-1">
+               <div className="flex justify-between text-[8px] text-gray-600 px-1 pt-0.5">
                  <span>0.1g</span>
                  <span>0.8g</span>
                  <span>1.5g</span>
                </div>
             </div>
 
-            <div className="flex flex-col space-y-1 px-1">
+            <div className="flex flex-col space-y-0.5 px-0.5 mt-1">
                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 text-xs">Total Cost:</span>
-                  <span className="text-white font-bold text-base">{(weight * 5).toFixed(2)}€</span>
+                  <span className="text-gray-400 text-[11px]">Total Cost:</span>
+                  <span className="text-white font-bold text-sm">{(weight * 5).toFixed(2)}€</span>
                </div>
                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 text-[10px]">Per Payer ({payingUsers.length}):</span>
-                  <span className="text-yellow-400 font-bold text-xs flex items-center gap-1">
+                  <span className="text-gray-500 text-[9px]">Per Payer ({payingUsers.length}):</span>
+                  <span className="text-yellow-400 font-bold text-[11px] flex items-center gap-0.5">
                     {payingUsers.length > 0 ? ((weight * 5) / payingUsers.length).toFixed(2) : "0.00"}
-                    <Euro className="w-2 h-2" />
+                    <Euro className="w-2.5 h-2.5" />
                   </span>
                </div>
             </div>
@@ -505,11 +518,11 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
         </div>
 
         {/* Right Side: The Circle UI */}
-        <div className="w-full md:w-2/3 h-full min-h-[380px] relative flex items-center justify-center mt-2 md:mt-0 overflow-visible">
+        <div className="w-full md:w-2/3 h-full min-h-[260px] md:min-h-[300px] relative flex items-center justify-center mt-2 md:mt-0 overflow-visible">
           
           <div className="relative w-full h-full flex items-center justify-center overflow-visible">
              {/* Dynamic dashed circle ring */}
-            <div className={`absolute w-[270px] h-[270px] rounded-full border border-dashed transition-all duration-1000 ${rotationUsers.length > 1 ? 'border-green-500/30' : 'border-gray-700'} `}></div>
+            <div className={`absolute w-[210px] h-[210px] rounded-full border border-dashed transition-colors duration-1000 transform-gpu ${rotationUsers.length > 1 ? 'border-green-500/30' : 'border-gray-700'} `}></div>
 
             {/* Spark Button in the Center */}
             <motion.div className="z-20 relative px-10">
@@ -518,7 +531,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
                 disabled={isLoading}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`relative group flex flex-col items-center justify-center w-32 h-32 rounded-full border-4 shadow-2xl transition-all duration-300 ${
+                className={`relative group flex flex-col items-center justify-center w-28 h-28 rounded-full border-4 shadow-2xl transition duration-300 transform-gpu ${
                   isLighterActive 
                     ? 'bg-amber-500 border-amber-300 shadow-[0_0_50px_rgba(245,158,11,0.8)]' 
                     : 'bg-green-900 border-green-500 hover:bg-green-800 shadow-[0_0_30px_rgba(0,255,65,0.4)]'

@@ -28,50 +28,19 @@ const QuickAdd = ({ drinkId }) => {
       });
   }, []);
 
-  const handleDrinkSelect = async (drinkWithPrice) => {
+  const handleDrinkSelect = async (rotationData) => {
     if (!token || !user) return;
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-      const today = new Date().toISOString().split('T')[0];
       
-      const resData = await fetch(`${backendUrl}/api/consumption`, {
-        credentials: 'include'
-      });
-      const allData = resData.ok ? await resData.json() : [];
-      const todayData = allData.find(d => d.date === today) || {
-        date: today,
-        drinks: [],
-        totalCaffeine: 0,
-        totalCost: 0
-      };
-
-      const drinkPrice = drinkWithPrice.selectedPrice !== undefined ? drinkWithPrice.selectedPrice : drinkWithPrice.defaultPrice;
-      const safeCaffeineAmount = Math.max(0, drinkWithPrice.caffeine || 0);
-      
-      const newDrinkEntry = {
-        id: String(drinkWithPrice.id),
-        price: drinkPrice,
-        timestamp: new Date().toISOString(),
-      };
-
-      const updatedDay = {
-        ...todayData,
-        username: user.username,
-        drinks: [...todayData.drinks, newDrinkEntry],
-        totalCaffeine: todayData.totalCaffeine + safeCaffeineAmount,
-        totalCost: (todayData.totalCost || 0) + drinkPrice
-      };
-
-      const saveRes = await fetch(`${backendUrl}/api/consumption`, {
+      const res = await fetch(`${backendUrl}/api/rotation`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(updatedDay)
+        body: JSON.stringify(rotationData)
       });
 
-      if (!saveRes.ok) throw new Error('Failed to save');
+      if (!res.ok) throw new Error('Failed to save rotation');
       
       setStatus('success');
       setTimeout(() => {

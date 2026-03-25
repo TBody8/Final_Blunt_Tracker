@@ -59,8 +59,9 @@ export default function Leaderboard({ onClose }) {
     const fetchLeaderboard = async () => {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-        const res = await fetch(`${backendUrl}/api/leaderboard`, {
-          credentials: 'include'
+        const res = await fetch(`${backendUrl}/api/leaderboard?t=${Date.now()}`, {
+          credentials: 'include',
+          cache: 'no-store'
         });
         
         if (!res.ok) throw new Error('Failed to fetch Leaderboard data');
@@ -86,31 +87,36 @@ export default function Leaderboard({ onClose }) {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       >
-        {/* Header */}
-        <div className='p-6 border-b border-gray-800 flex justify-between items-center bg-gradient-to-r from-gray-900 to-[#0d0d0d] relative overflow-hidden'>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
-          
-          <div className='flex items-center gap-3 md:gap-4 relative z-10'>
-            <div className="p-2 md:p-3 bg-yellow-500/20 rounded-xl border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.4)] flex-shrink-0">
-              <Trophy className='w-6 h-6 md:w-8 md:h-8 text-yellow-500' />
+        {/* Header (Image_9 Style) */}
+        <div className='p-4 md:p-6 border-b border-white/5 flex justify-between items-center bg-gray-950 px-8 relative z-50'>
+          <div className='flex items-center gap-5'>
+            <div className="p-3 bg-yellow-500 rounded-2xl shadow-[0_0_20px_rgba(234,179,8,0.4)] flex-shrink-0">
+               <Trophy className='w-7 h-7 text-black' strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-3xl md:text-5xl font-bold leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 blunt-title mb-1 md:mb-2">
-                Top Smokers
-              </h2>
-              <p className="text-gray-400 text-[10px] md:text-sm">The most legendary lungs in the community</p>
+              <h2 className="text-2xl md:text-4xl blunt-title text-[#2ecc71] drop-shadow-sm">Top Smokers</h2>
+              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mt-0.5">The most legendary lungs in the community</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className='p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-colors relative z-10'
+            className='p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300'
           >
             <X className='w-6 h-6' />
           </button>
         </div>
 
-        {/* Content */}
-        <div className='flex-1 overflow-y-auto p-2 md:p-6 custom-scrollbar relative'>
+        {/* Content (Image_9 Style) */}
+        <div className='flex-1 overflow-y-auto p-4 md:p-8 relative' style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#2eef6a transparent'
+        }}>
+          <style>{`
+            .custom-leaderboard-scroll::-webkit-scrollbar { width: 6px; }
+            .custom-leaderboard-scroll::-webkit-scrollbar-track { background: transparent; }
+            .custom-leaderboard-scroll::-webkit-scrollbar-thumb { background: #2eef6a; border-radius: 20px; box-shadow: 0 0 10px #2eef6a; }
+          `}</style>
+          <div className="custom-leaderboard-scroll h-full">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64">
               <Loader />
@@ -128,148 +134,142 @@ export default function Leaderboard({ onClose }) {
               <p className="text-sm mt-2 opacity-50">Log your first blunt to claim the crown.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Podium Top 3 View */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {leaderboardData.slice(0, 3).map((user, index) => {
-                  const rank = index + 1;
-                  const isFirst = rank === 1;
+            <div className="space-y-6 px-4 pb-8">
+              {leaderboardData
+                .sort((a, b) => (b.totalBluntsCount || 0) - (a.totalBluntsCount || 0))
+                .map((user, index) => {
+                  const rankInfo = getPlayerRankInfo(user.totalBluntsCount || 0);
+                  const isFirst = index === 0;
                   
                   return (
                     <motion.div 
                       key={user.username}
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.15 }}
-                      className={`relative flex flex-col items-center p-6 rounded-2xl border backdrop-blur-lg overflow-hidden ${
-                        isFirst 
-                          ? 'md:-mt-4 bg-gradient-to-b from-yellow-500/10 to-black border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]' 
-                          : rank === 2
-                            ? 'bg-gradient-to-b from-gray-300/10 to-black border-gray-400/30'
-                            : 'bg-gradient-to-b from-amber-700/10 to-black border-amber-700/30'
-                      }`}
+                      transition={{ delay: index * 0.1 }}
+                      className={`relative w-full max-w-2xl mx-auto rounded-[40px] border border-[#f59e0b]/20 bg-black/90 p-8 shadow-2xl overflow-hidden group`}
                     >
-                      {isFirst && <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300"></div>}
+                      {/* Top Neon Border Highlight (Image_9 Style) */}
+                      <div className={`absolute top-0 left-0 right-0 h-1.5 ${isFirst ? 'bg-yellow-400 shadow-[0_4px_25px_rgba(234,179,8,0.8)]' : 'bg-gray-800 opacity-30 shadow-none'}`} />
                       
-                      <div className="mt-2 mb-3 flex justify-center w-full">
-                        <img 
-                          src={`/blunt-images/${isFirst ? 'corona_dorada' : rank === 2 ? 'corona_plata' : 'corona_cobre'}.png`} 
-                          alt="Crown Rank"
-                          className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.4)] w-20 h-20 md:w-28 md:h-28"
-                        />
-                      </div>
-                      
-                      <div className="flex flex-col md:flex-row items-center justify-center w-full">
-                        <h3 className={`blunt-title text-4xl md:text-5xl tracking-wide truncate max-w-[90%] text-center ${user.username === 'lil.nia_' ? 'text-pink-300' : isFirst ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : ''}`}>
-                          {user.username}
-                        </h3>
-                      </div>
-                      {(() => {
-                        const rankInfo = getPlayerRankInfo(user.totalBluntsCount || 0);
-                        return (
-                          <p className={`flex justify-center items-center gap-1 text-xs font-bold mt-1 ${rankInfo.textClass}`}>
-                            <Star className={`w-3 h-3 ${rankInfo.iconClass}`} /> {rankInfo.title}
-                          </p>
-                        );
-                      })()}
-                      
-                      <div className="mt-4 text-center">
-                        <div className={`text-4xl font-black tracking-tighter ${isFirst ? 'text-yellow-400' : 'text-white'}`}>
-                          {user.totalBluntsCount}
-                        </div>
-                        <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">Blunts Smoked</p>
-                      </div>
+                      {/* Right Neon Scrollbar-ish detail */}
+                      <div className={`absolute top-1/2 -translate-y-1/2 right-1 h-[60%] w-2 rounded-full ${isFirst ? 'bg-[#2eef6a] shadow-[0_0_15px_#2eef6a]' : 'bg-gray-800 opacity-20'}`} />
 
-                      <div className="w-full mt-6 space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-400 flex items-center gap-1"><Coins className="w-4 h-4" /> Spent</span>
-                          <span className="font-mono text-gray-200">{(user.totalSpent || 0).toFixed(2)}€</span>
+                      <div className="flex flex-col items-center">
+                        {/* Avatar Flanked by Medals Layout */}
+                        <div className="relative mb-6 flex flex-row items-center justify-center w-full gap-4 sm:gap-8">
+                           
+                           {/* Left Medals */}
+                           <div className="flex flex-col gap-3 z-30">
+                             {!user.optional_achievements || user.optional_achievements.length === 0 ? (
+                               index < 3 && <div className="text-xl opacity-50 filter drop-shadow-md bg-black/40 p-2 rounded-xl" title="No Data">🔴</div>
+                             ) : (
+                               user.optional_achievements.filter((_, i) => i % 2 === 0).map(m => (
+                                 <div key={m.id} className="text-xl sm:text-3xl filter drop-shadow-md bg-black/40 p-2 rounded-xl border border-white/5 shadow-[inset_0_0_15px_rgba(255,255,255,0.02)]" title={m.name}>{m.icon}</div>
+                               ))
+                             )}
+                           </div>
+
+                           {/* Center Avatar */}
+                           <div className="relative z-10 p-2 transform group-hover:scale-105 transition-transform duration-500 flex-shrink-0">
+                              <img 
+                                src={`/blunt-images/${index === 0 ? 'fav_png.png' : 'fav_png.png'}`} 
+                                className={`w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-[0_0_20px_rgba(234,179,8,0.4)] ${index > 0 ? 'grayscale opacity-60' : ''}`} 
+                                alt="Blunt Profile"
+                              />
+                           </div>
+                           
+                           {/* Right Medals */}
+                           <div className="flex flex-col gap-3 z-30">
+                             {!user.optional_achievements || user.optional_achievements.length === 0 ? (
+                               index < 3 && <div className="text-xl opacity-50 filter drop-shadow-md bg-black/40 p-2 rounded-xl" title="No Data">🔴</div>
+                             ) : (
+                               user.optional_achievements.filter((_, i) => i % 2 !== 0).map(m => (
+                                 <div key={m.id} className="text-xl sm:text-3xl filter drop-shadow-md bg-black/40 p-2 rounded-xl border border-white/5 shadow-[inset_0_0_15px_rgba(255,255,255,0.02)]" title={m.name}>{m.icon}</div>
+                               ))
+                             )}
+                           </div>
+
+                           {/* Glow Backdrop */}
+                           <div className="absolute inset-0 bg-yellow-500/10 blur-[40px] rounded-full scale-[1.2] transform translate-y-4 pointer-events-none" />
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-400 flex items-center gap-1"><Flame className="w-4 h-4 text-orange-500" /> Avg/Day</span>
-                          <span className="font-mono text-gray-200">{(user.totalBluntsCount / (user.activeDays || 1)).toFixed(1)}</span>
+
+                        {/* Professional Username Section */}
+                        <div className="text-center mb-6 z-20 relative">
+                           <h3 className={`text-4xl md:text-5xl blunt-title text-white tracking-wide mb-3 drop-shadow-[0_2px_4px_rgba(255,255,255,0.1)]`}>
+                             {user.username}
+                           </h3>
+                           <div className="flex items-center justify-center gap-2">
+                             <Star className="w-4 h-4 text-green-400 fill-green-400" />
+                             <span className="text-green-400 font-bold uppercase tracking-[0.2em] text-xs pt-0.5">{rankInfo.title}</span>
+                           </div>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-400 flex items-center gap-1"><MapPin className="w-4 h-4 text-blue-500" /> Top Spot</span>
-                          <span className="font-mono text-gray-200 truncate max-w-[120px]" title={user.topSpot}>{user.topSpot || 'None'}</span>
+
+                        {/* Giant Ranking Number */}
+                        <div className="text-center mb-8">
+                           <div className="text-6xl md:text-7xl font-black text-yellow-500 leading-none drop-shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+                             {user.totalBluntsCount}
+                           </div>
+                           <p className="text-gray-500 font-black uppercase tracking-[0.3em] text-[10px] md:text-xs mt-3">Blunts Smoked</p>
                         </div>
-                        <div className="flex justify-between items-center text-sm mt-3 pt-3 border-t border-gray-800/50">
-                          <span className="text-gray-400 flex items-center gap-1"><Zap className="w-4 h-4 text-purple-500" /> Max Streak</span>
-                          <span className="font-mono text-gray-200">{user.maxStreak || 0} Days</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm pt-1">
-                          <span className="text-gray-500 flex items-center gap-1 text-xs"><Flame className="w-3 h-3 text-red-500/80" /> Current Streak</span>
-                          <span className="font-mono text-gray-400 text-xs">{user.currentStreak || 0} Days</span>
-                        </div>
-                        {user.topBuddies && user.topBuddies.length > 0 && (
-                          <div className="flex flex-col items-center justify-center text-sm mt-3 pt-3 border-t border-gray-800/50">
-                            <span className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Rotation Buddies</span>
-                            <div className="flex flex-wrap gap-1 justify-center">
-                              {user.topBuddies.map((b, bIdx) => (
-                                <span key={bIdx} className="bg-gray-800/80 text-[10px] text-gray-300 px-2 py-0.5 rounded-full border border-gray-700/50">
-                                  {b.username} ({b.sessions})
-                                </span>
-                              ))}
+
+                        {/* Detailed Stats Interaction Board */}
+                        <div className="w-full space-y-4 px-4 md:px-12 max-w-md">
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center group/stat">
+                              <span className="text-gray-400/80 flex items-center gap-3 text-sm md:text-base"><Coins className="w-5 h-5" /> Spent</span>
+                              <span className="font-bold text-white text-base md:text-lg">{(user.totalSpent || 0).toFixed(2)}€</span>
+                            </div>
+                            <div className="flex justify-between items-center group/stat">
+                              <span className="text-gray-400/80 flex items-center gap-3 text-sm md:text-base"><Flame className="w-5 h-5 text-orange-500" /> Avg/Week</span>
+                              <span className="font-bold text-white text-base md:text-lg">{(user.totalBluntsCount / (user.totalWeeks || 1)).toFixed(1)}</span>
+                            </div>
+                            <div className="flex justify-between items-center group/stat">
+                              <span className="text-gray-400/80 flex items-center gap-3 text-sm md:text-base"><MapPin className="w-5 h-5 text-blue-500" /> Top Spot</span>
+                              <span className="font-bold text-white text-base md:text-lg truncate max-w-[150px]">{user.topSpot || 'None'}</span>
                             </div>
                           </div>
-                        )}
+                          
+                          <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-800 to-transparent my-6" />
+
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-purple-400 flex items-center gap-3 text-sm md:text-base font-bold"><Zap className="w-5 h-5" /> Max Streak</span>
+                              <span className="font-bold text-white text-base md:text-lg">{user.maxStreak || 0} Days</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-red-500 flex items-center gap-3 text-sm md:text-base font-bold"><Flame className="w-5 h-5" /> Current Streak</span>
+                              <span className="font-bold text-white text-base md:text-lg">{user.currentStreak || 0} Days</span>
+                            </div>
+                          </div>
+
+                          {/* Rotation Buddies Bubble Section */}
+                          {user.topBuddies && user.topBuddies.length > 0 && (
+                             <div className="mt-8 pt-8 border-t border-white/5 text-center">
+                               <p className="text-gray-500 font-black uppercase tracking-[0.2em] text-[10px] md:text-xs mb-4">Rotation Buddies</p>
+                               <div className="flex flex-wrap gap-2 justify-center">
+                                 {user.topBuddies.map((b, bIdx) => (
+                                   <motion.span 
+                                     key={bIdx}
+                                     whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                                     className="bg-gray-900/80 border border-white/5 text-[10px] md:text-[11px] text-gray-300 font-bold px-4 py-2 rounded-2xl"
+                                   >
+                                     {b.username} ({b.sessions})
+                                   </motion.span>
+                                 ))}
+                               </div>
+                             </div>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   );
                 })}
-              </div>
-
-              {/* The Rest of the Ladder */}
-              {leaderboardData.length > 3 && (
-                <div className="bg-gray-900/40 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
-                  <div className="grid grid-cols-5 gap-1 sm:gap-2 md:gap-4 p-2 sm:p-4 md:p-5 text-[8px] sm:text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-800 bg-black/40">
-                    <div className="col-span-2 pl-1 sm:pl-2">Dominator</div>
-                    <div className="text-center">Blunts</div>
-                    <div className="text-center">Avg/Day</div>
-                    <div className="text-right pr-1 sm:pr-2">Level</div>
-                  </div>
-                  
-                  <div className="divide-y divide-gray-800/50">
-                    {leaderboardData.slice(3).map((user, idx) => {
-                      const rankInfo = getPlayerRankInfo(user.totalBluntsCount || 0);
-                      return (
-                        <div 
-                          key={user.username}
-                          className="grid grid-cols-5 gap-1 sm:gap-2 md:gap-4 p-2 sm:p-4 md:p-5 items-center hover:bg-gray-800/40 transition-colors animate-fade-in-up relative"
-                          style={{ animationDelay: `${0.4 + (idx * 0.05)}s` }}
-                        >
-                          <div className="col-span-2 flex items-center gap-2 md:gap-4 overflow-hidden">
-                            <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full bg-gray-800/80 border border-gray-700 font-mono text-[10px] sm:text-xs md:text-sm flex shrink-0 items-center justify-center text-gray-400 font-bold shadow-inner">
-                              #{idx + 4}
-                            </div>
-                            <span className={`font-bold text-xs sm:text-lg md:text-2xl truncate ${user.username === 'lil.nia_' ? 'text-pink-300 drop-shadow-[0_0_8px_rgba(244,114,182,0.4)]' : 'text-gray-200'}`}>
-                              {user.username}
-                            </span>
-                          </div>
-                          
-                          <div className="text-center font-black text-white text-sm sm:text-xl md:text-2xl drop-shadow-sm flex items-center justify-center h-full">
-                            {user.totalBluntsCount || 0}
-                          </div>
-                          
-                          <div className="text-center font-mono text-gray-400 text-[10px] sm:text-sm flex items-center justify-center gap-1 h-full">
-                            <Flame className="w-3 h-3 text-orange-500/60 hidden sm:block shrink-0" />
-                            <span className="truncate">{(user.totalBluntsCount / (user.activeDays || 1)).toFixed(1)}</span>
-                          </div>
-                          
-                          <div className="text-right flex items-center justify-end gap-1 font-medium text-[8px] sm:text-[10px] md:text-xs lg:text-sm overflow-hidden h-full">
-                            <span className={`${rankInfo.textClass} truncate max-w-[40px] sm:max-w-[70px] md:max-w-[120px]`} title={rankInfo.title}>{rankInfo.title}</span>
-                            <Star className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${rankInfo.iconClass}`} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
+    </motion.div>
     </div>
   );
 }

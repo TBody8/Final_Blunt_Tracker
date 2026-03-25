@@ -1,4 +1,4 @@
-import { TROPHY_LEVELS } from '../data/trophyDefinitions';
+import { TROPHY_LEVELS, OPTIONAL_ACHIEVEMENTS } from '../data/trophyDefinitions';
 import { calculateStreak } from '../data/mockData';
 
 export const calculateAchievements = (consumptionData, currentUser) => {
@@ -11,12 +11,43 @@ export const calculateAchievements = (consumptionData, currentUser) => {
     rotationCount: 0,
     weeklyCounts: {}, // ISO week -> count
     buddySessions: {}, // Buddy -> count
-    streak: calculateStreak(consumptionData)
+    weeklyCounts: {}, // ISO week -> count
+    buddySessions: {}, // Buddy -> count
+    streak: calculateStreak(consumptionData),
+    freeloaderCount: 0,
+    nightSmokerCount: 0,
+    morningSmokerCount: 0,
+    totalBluntsCount: 0,
+    soloSmokesCount: 0,
+    largeRotationCount: 0,
+    fattyBluntCount: 0,
+    dailyMax: 0,
+    totalWeight: 0
   };
 
   consumptionData.forEach(day => {
     const blunts = day.blunts || [];
+    
+    if (blunts.length > stats.dailyMax) {
+      stats.dailyMax = blunts.length;
+    }
+
     blunts.forEach(blunt => {
+      stats.totalBluntsCount++;
+      if (blunt.weight) stats.totalWeight += blunt.weight;
+
+      // Freeloader Check: If someone else paid for the rotation
+      if (blunt.payer && currentUser && blunt.payer !== currentUser.username) {
+        stats.freeloaderCount++;
+      }
+
+      // Time of Day Check
+      if (blunt.date) {
+        const h = new Date(blunt.date).getHours();
+        if (h >= 0 && h < 5) stats.nightSmokerCount++;
+        if (h >= 5 && h < 11) stats.morningSmokerCount++;
+      }
+
       // 1. Unique Spots
       if (blunt.spot) stats.uniqueSpots.add(blunt.spot.toLowerCase().trim());
 
@@ -28,6 +59,10 @@ export const calculateAchievements = (consumptionData, currentUser) => {
 
       // 4. Group Sessions
       if (blunt.participants >= 3) stats.groupRotations++;
+      if (blunt.participants >= 7) stats.largeRotationCount++;
+      if (blunt.participants === 1) stats.soloSmokesCount++;
+      if (blunt.weight >= 1.5) stats.fattyBluntCount++;
+      
       if (blunt.participants > stats.maxParticipants) stats.maxParticipants = blunt.participants;
       if (blunt.participants > 1) stats.rotationCount++;
 
@@ -80,6 +115,28 @@ export const calculateAchievements = (consumptionData, currentUser) => {
       achieved = progress >= trophy.goal;
       return { ...trophy, progress, achieved, percentage: Math.min(100, (progress / trophy.goal) * 100) };
     });
+  });
+
+  // Calculate optional achievements
+  results.optional = OPTIONAL_ACHIEVEMENTS.map(trophy => {
+    let progress = 0;
+    switch(trophy.type) {
+      case 'freeloader': progress = stats.freeloaderCount; break;
+      case 'streak': progress = stats.streak; break;
+      case 'night_smoker': progress = stats.nightSmokerCount; break;
+      case 'morning_smoker': progress = stats.morningSmokerCount; break;
+      case 'sponsor_count': progress = stats.sponsorCount; break;
+      case 'total_blunts': progress = stats.totalBluntsCount; break;
+      case 'solo_smokes': progress = stats.soloSmokesCount; break;
+      case 'large_rotation_count': progress = stats.largeRotationCount; break;
+      case 'fatty_blunt': progress = stats.fattyBluntCount; break;
+      case 'spot_explorer': progress = stats.uniqueSpots.size; break;
+      case 'daily_max': progress = stats.dailyMax; break;
+      case 'total_weight': progress = stats.totalWeight; break;
+      default: progress = 0;
+    }
+    const achieved = progress >= trophy.goal;
+    return { ...trophy, progress, achieved, percentage: Math.min(100, (progress / trophy.goal) * 100) };
   });
 
   return results;

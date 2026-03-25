@@ -68,7 +68,6 @@ async def register(request: Request, response: Response, user: UserIn):
     #     if anti_cheat_mode == "live" and not is_protected_ip:
     #         raise HTTPException(status_code=403, detail="Permaban por tonto")
     #     elif is_protected_ip:
-    #          print("DEBUG: Protected IP bypassed actual DB permaban logic but will trigger UI")
     #          raise HTTPException(status_code=403, detail="Permaban por tonto")
             
     # 2. Anti-Cheat: [DISABLED]
@@ -80,7 +79,6 @@ async def register(request: Request, response: Response, user: UserIn):
     #                 "reason": "Ban Evasion (LocalStorage Flag)",
     #                 "date": datetime.utcnow().isoformat()
     #             })
-    #         print(f"DEBUG: Triggered Permaban on Frontend evasion. Protected={is_protected_ip}")
     #         raise HTTPException(status_code=403, detail="Permaban por tonto")
             
     existing = await users_collection.find_one({"username": user.username})
@@ -101,7 +99,7 @@ async def register(request: Request, response: Response, user: UserIn):
         key="access_token",
         value=token,
         httponly=True,
-        secure=False, # Set to True in production with HTTPS
+        secure=True, # Set to True in production with HTTPS
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
@@ -149,7 +147,6 @@ async def login(request: Request, response: Response, user: UserIn):
         if not is_developer:
             await users_collection.delete_one({"username": user.username})
             await db["consumption"].delete_many({"username": user.username})
-            print(f"[Anti-Cheat] ☠️ Cuenta PULVERIZADA por Permaban: {user.username} (IP: {client_ip})")
 
     # 1. Anti-Cheat: [DISABLED]
     # banned_ip_doc = await db["banned_ips"].find_one({"ip": client_ip})
@@ -158,7 +155,6 @@ async def login(request: Request, response: Response, user: UserIn):
     #         await pulverize_account()
     #         raise HTTPException(status_code=403, detail="Permaban por tonto")
     #     elif is_protected_ip:
-    #          print("DEBUG: Protected IP bypassed actual DB permaban logic but will trigger UI")
     #          raise HTTPException(status_code=403, detail="Permaban por tonto")
 
     # 2. Anti-Cheat: [DISABLED]
@@ -195,7 +191,7 @@ async def login(request: Request, response: Response, user: UserIn):
         key="access_token",
         value=token,
         httponly=True,
-        secure=False, # Set to True in production with HTTPS
+        secure=True, # Set to True in production with HTTPS
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
@@ -206,7 +202,7 @@ async def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=False,
+        secure=True,
         samesite="lax"
     )
     return {"message": "Successfully logged out"}

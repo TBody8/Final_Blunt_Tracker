@@ -20,7 +20,6 @@ load_dotenv(ROOT_DIR / '.env')
 
 from database import client, db
 
-print("MONGO_URI:", os.environ.get("MONGO_URI"))
 app = FastAPI()
 
 # Security Headers Middleware
@@ -87,9 +86,6 @@ class Settings(BaseModel):
 @api_router.get("/consumption", response_model=List[ConsumptionData])
 async def get_consumption_data(username: str = Depends(get_current_username)):
     try:
-        print(f"[GET /consumption] Petición recibida para usuario: {username}")
-        data = await consumption_collection.find({"username": username}).sort("date", -1).to_list(1000)
-        print(f"[GET /consumption] Datos encontrados: {len(data)} registros para {username}")
         return [ConsumptionData(**item) for item in data]
     except Exception as e:
         logging.error(f"Error fetching consumption data: {str(e)}")
@@ -368,20 +364,23 @@ async def get_leaderboard():
                     "spot": "$allBluntsArrays.spot"
                 },
                 "bluntCount": {"$sum": 1},
-                "totalBlunts": {"$first": "$totalBlunts"}
+                "totalBlunts": {"$first": "$totalBlunts"},
+                "spotSpent": {"$sum": {"$toDouble": {"$ifNull": ["$allBluntsArrays.price", 0]}}}
             }},
             {"$sort": {"bluntCount": -1}},
             {"$group": {
                 "_id": "$_id.username",
                 "totalBluntsCount": {"$sum": "$bluntCount"},
                 "topSpot": {"$first": "$_id.spot"},
-                "totalBlunts": {"$first": "$totalBlunts"}
+                "totalBlunts": {"$first": "$totalBlunts"},
+                "totalSpent": {"$sum": "$spotSpent"}
             }},
             {"$project": {
                 "username": "$_id",
                 "totalBluntsCount": 1,
                 "topSpot": 1,
                 "totalBlunts": 1,
+                "totalSpent": 1,
                 "_id": 0
             }},
             {"$sort": {
@@ -427,20 +426,32 @@ async def get_leaderboard():
                     max_streak = current_streak
             
             active_current_streak = 0
+            total_weeks = 1.0
             if dates:
-                today = datetime.now().date()
-                days_since_last = (today - dates[-1].date()).days
+                today = datetime.now()
+                first_day = dates[0]
+                days_diff = (today - first_day).days
+                total_weeks = max(1.0, days_diff / 7.0)
+                
+                today_date = today.date()
+                days_since_last = (today_date - dates[-1].date()).days
                 if days_since_last <= 1:
                     active_current_streak = current_streak
                     
-            user_streaks[username] = {"max": max_streak, "current": active_current_streak, "activeDays": len(dates)}
+            user_streaks[username] = {
+                "max": max_streak, 
+                "current": active_current_streak, 
+                "activeDays": len(dates),
+                "totalWeeks": total_weeks
+            }
             
         # Merge maxStreak and currentStreak into leaderboard data and assign random tiebreaker
         for user in leaderboard_data:
-            streaks = user_streaks.get(user.get("username"), {"max": 0, "current": 0, "activeDays": 1})
+            streaks = user_streaks.get(user.get("username"), {"max": 0, "current": 0, "activeDays": 1, "totalWeeks": 1.0})
             user["maxStreak"] = streaks.get("max", 0)
             user["currentStreak"] = streaks.get("current", 0)
-            user["activeDays"] = streaks.get("activeDays", 1) if streaks.get("activeDays", 1) > 0 else 1
+            user["activeDays"] = streaks.get("activeDays", 1)
+            user["totalWeeks"] = streaks.get("totalWeeks", 1.0)
             user["_random_tiebreaker"] = random.random()
             
         # Final Python Sort: totalBluntsP(desc), maxStreak(desc), random(desc)
@@ -490,8 +501,93 @@ async def get_leaderboard():
                 user["topBuddies"] = [{"username": b[0], "sessions": b[1]} for b in sorted_buddies[:3]]
             else:
                 user["topBuddies"] = []
-        
-        # Update Cache
+
+        # Optional Achievements calculation for Top 3
+        try:
+            top_3_usernames = [u.get("username") for u in leaderboard_data[:3]]
+            if top_3_usernames:
+                blunts_cursor = consumption_collection.aggregate([
+                    {"$match": {"username": {"$in": top_3_usernames}}},
+                    {"$unwind": "$blunts"},
+                    {"$project": {"username": 1, "blunt": "$blunts", "_id": 0}}
+                ])
+                top_3_blunts = await blunts_cursor.to_list(length=None)
+                
+                stats = {u: {"freeloader": 0, "night": 0, "morning": 0, "sponsor": 0, "solo": 0, "large": 0, "fatty": 0, "unique_spots": set(), "daily_counts": {}, "total_weight": 0.0} for u in top_3_usernames}
+                
+                for item in top_3_blunts:
+                    uname = item.get("username")
+                    if not uname or uname not in stats: continue
+                    blunt = item.get("blunt", {})
+                    st = stats[uname]
+                    
+                    if blunt.get("payer") and blunt.get("payer") != uname:
+                        st["freeloader"] += 1
+                    if blunt.get("price", 0) > 0:
+                        st["sponsor"] += 1
+                    if blunt.get("participants", 0) == 1:
+                        st["solo"] += 1
+                    if blunt.get("participants", 0) >= 7:
+                        st["large"] += 1
+                    if blunt.get("weight", 0) >= 1.5:
+                        st["fatty"] += 1
+                    if blunt.get("weight", 0):
+                        st["total_weight"] += float(blunt.get("weight"))
+                    if blunt.get("spot"):
+                        st["unique_spots"].add(blunt.get("spot").strip().lower())
+                        
+                    ts = blunt.get("timestamp")
+                    day_key = None
+                    if ts:
+                        try:
+                            dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                            h = dt.hour
+                            if 0 <= h < 5:
+                                st["night"] += 1
+                            elif 5 <= h < 11:
+                                st["morning"] += 1
+                            day_key = dt.strftime("%Y-%m-%d")
+                        except:
+                            pass
+                    if not day_key:
+                        day_key = blunt.get("date", "unknown")
+                    st["daily_counts"][day_key] = st["daily_counts"].get(day_key, 0) + 1
+                    
+                for u in leaderboard_data[:3]:
+                    uname = u.get("username")
+                    st = stats.get(uname, {})
+                    daily_max = max(st.get("daily_counts").values()) if st.get("daily_counts") else 0
+                    
+                    medals = []
+                    if st.get("freeloader", 0) >= 10:
+                        medals.append({"id": "el_junador", "icon": "🪳", "name": "El Mayor Junador", "priority": 1})
+                    if st.get("solo", 0) >= 20:
+                        medals.append({"id": "lone_wolf", "icon": "🎧", "name": "Autista Empedernido", "priority": 2})
+                    if st.get("large", 0) >= 1:
+                        medals.append({"id": "shaman", "icon": "🧙‍♂️", "name": "El Chamán", "priority": 3})
+                    if st.get("fatty", 0) >= 1:
+                        medals.append({"id": "fat_blunt", "icon": "🪵", "name": "El Gordo", "priority": 4})
+                    if len(st.get("unique_spots", set())) >= 5:
+                        medals.append({"id": "explorer", "icon": "🗺️", "name": "Explorer", "priority": 5})
+                    if daily_max >= 5:
+                        medals.append({"id": "chimney", "icon": "🏭", "name": "La Chimenea", "priority": 6})
+                    if st.get("total_weight", 0) >= 10:
+                        medals.append({"id": "heavyweight", "icon": "🏋️‍♂️", "name": "Heavyweight", "priority": 7})
+                    if st.get("night", 0) >= 5:
+                        medals.append({"id": "night_owl", "icon": "🦉", "name": "Buenas Noches", "priority": 8})
+                    if st.get("morning", 0) >= 5:
+                        medals.append({"id": "early_bird", "icon": "🌅", "name": "Buenos Días", "priority": 9})
+                    if u.get("maxStreak", 0) >= 5:
+                        medals.append({"id": "iron_lungs", "icon": "🫁", "name": "Inhalador de Alquitrán", "priority": 10})
+                    if st.get("sponsor", 0) >= 20:
+                        medals.append({"id": "sugar_daddy", "icon": "💸", "name": "Sugar Daddy", "priority": 11})
+                    if u.get("totalBluntsCount", 0) >= 100:
+                        medals.append({"id": "veteran", "icon": "🎖️", "name": "Veteran Smoker", "priority": 12})
+                        
+                    medals.sort(key=lambda x: x["priority"])
+                    u["optional_achievements"] = medals
+        except Exception as e:
+            logging.error(f"Error calculating medals: {str(e)}")
         leaderboard_cache["data"] = leaderboard_data
         leaderboard_cache["last_updated"] = today_str
         

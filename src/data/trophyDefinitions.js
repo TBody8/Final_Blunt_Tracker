@@ -27,3 +27,18 @@ export const TROPHY_LEVELS = {
     { id: 'cloud_atlas', name: 'Cloud Atlas', icon: '⚡', description: 'Visit 15 different spots.', type: 'unique_spots', goal: 15 }
   ]
 };
+
+export const OPTIONAL_ACHIEVEMENTS = [
+  { id: 'el_junador', name: 'El Mayor Junador', icon: '🪳', description: 'Smoke 10 blunts without paying a single cent (Freeloader).', type: 'freeloader', goal: 10 },
+  { id: 'iron_lungs', name: 'Inhalador de Alquitrán', icon: '🫁', description: 'Maintain a 5-day streak without failing.', type: 'streak', goal: 5 },
+  { id: 'night_owl', name: 'Buenas Noches', icon: '🦉', description: 'Smoke 5 times after midnight.', type: 'night_smoker', goal: 5 },
+  { id: 'early_bird', name: 'Buenos Días', icon: '🌅', description: 'Smoke 5 times before 10:00 AM.', type: 'morning_smoker', goal: 5 },
+  { id: 'sugar_daddy', name: 'Sugar Daddy', icon: '💸', description: 'Pay for 20 blunts entirely out of your own pocket.', type: 'sponsor_count', goal: 20 },
+  { id: 'veteran', name: 'Veteran Smoker', icon: '🎖️', description: 'Smoke a total of 100 blunts.', type: 'total_blunts', goal: 100 },
+  { id: 'lone_wolf', name: 'Autista Empedernido', icon: '🤕', description: 'Complete 20 rotations completely alone.', type: 'solo_smokes', goal: 20 },
+  { id: 'shaman', name: 'El Chamán', icon: '🧙‍♂️', description: 'Participate in a massive rotation of 7 or more people.', type: 'large_rotation_count', goal: 1 },
+  { id: 'fat_blunt', name: 'El Gordo', icon: '🪵', description: 'Roll or participate in a blunt weighing 1.5g or more.', type: 'fatty_blunt', goal: 1 },
+  { id: 'explorer', name: 'Explorer', icon: '🗺️', description: 'Smoke blunts in 5 completely different spots.', type: 'spot_explorer', goal: 5 },
+  { id: 'chimney', name: 'La Chimenea', icon: '🏭', description: 'Smoke 5 or more blunts in a single day.', type: 'daily_max', goal: 5 },
+  { id: 'heavyweight', name: 'Heavyweight', icon: '🏋️‍♂️', description: 'Smoke a cumulative total of 10 grams over time.', type: 'total_weight', goal: 10 }
+];

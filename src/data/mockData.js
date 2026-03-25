@@ -66,18 +66,7 @@ export const mockQuotes = [
   "Keep the peace and pass the blunt."
 ];
 
-export const mockConsumptionData = [
-  { date: "2025-01-01", blunts: [{ id: "1", price: 2.99 }, { id: "2", price: 3.29 }], totalBlunts: 300, totalCost: 6.28 },
-  { date: "2025-01-02", blunts: [{ id: "1", price: 2.99 }], totalBlunts: 160, totalCost: 2.99 },
-  { date: "2025-01-03", blunts: [{ id: "3", price: 3.49 }, { id: "4", price: 3.29 }], totalBlunts: 300, totalCost: 6.78 },
-  { date: "2025-01-04", blunts: [{ id: "2", price: 3.29 }, { id: "5", price: 3.49 }], totalBlunts: 300, totalCost: 6.78 },
-  { date: "2025-01-05", blunts: [{ id: "1", price: 2.99 }, { id: "1", price: 2.99 }], totalBlunts: 320, totalCost: 5.98 },
-  { date: "2025-01-06", blunts: [{ id: "6", price: 3.29 }], totalBlunts: 140, totalCost: 3.29 },
-  { date: "2025-01-07", blunts: [{ id: "1", price: 2.99 }, { id: "3", price: 3.49 }, { id: "4", price: 3.29 }], totalBlunts: 460, totalCost: 9.77 },
-  { date: "2024-12-15", blunts: [{ id: "1", price: 2.99 }], totalBlunts: 160, totalCost: 2.99 },
-  { date: "2024-11-20", blunts: [{ id: "2", price: 3.29 }, { id: "3", price: 3.49 }], totalBlunts: 300, totalCost: 6.78 },
-  { date: "2024-10-10", blunts: [{ id: "4", price: 3.29 }], totalBlunts: 140, totalCost: 3.29 }
-];
+export const mockConsumptionData = [];
 
 export const getBluntLevel = (totalBlunts, achievementsByLevel = {}) => {
   const safeBlunts = Math.max(0, totalBlunts);
