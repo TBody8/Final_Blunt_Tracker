@@ -229,26 +229,30 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
     
     setIsLighterActive(true);
     
-    // Play sound if available
+    // Play sound: Try to play custom file first, fallback to synth oscillator
     try {
-      // Create a short oscillator beep to act as 'lighter' sound if no file exists
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.setValueAtTime(100, audioCtx.currentTime); // Lighter 'flick' type synth
-      oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-      
-      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      
-      oscillator.start(audioCtx.currentTime);
-      oscillator.stop(audioCtx.currentTime + 0.3);
+      const audio = new Audio('/sounds/spark.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(() => {
+        // Fallback to oscillator if file doesn't exist or fails
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(100, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.3);
+      });
     } catch(e) {
-      console.warn("Audio not supported");
+      console.warn("Audio playback error", e);
     }
 
     // Deduplicate spot case
