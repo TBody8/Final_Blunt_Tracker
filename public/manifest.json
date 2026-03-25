@@ -21,7 +21,7 @@
             "url": "/?quickadd=blunt",
             "icons": [
                 {
-                    "src": "blunt-images/Hoja_Fondo.png",
+                    "src": "Hoja_Fondo.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
