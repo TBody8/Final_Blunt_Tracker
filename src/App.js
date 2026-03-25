@@ -197,6 +197,7 @@ function App() {
         setUser(null);
         setConsumptionData([]);
         localStorage.removeItem('bluntTrackerUser');
+        localStorage.removeItem('bluntRotationData');
     }).catch(err => console.error(err));
   };
 
@@ -287,8 +288,14 @@ function App() {
   const handleDrinkSelect = useCallback(
     (drink) => {
        if (user) {
-           fetchUserData(user.username);
+           // Small delay to ensure DB consistency across all users in rotation
+           return new Promise(resolve => {
+               setTimeout(() => {
+                   fetchUserData(user.username).then(resolve);
+               }, 500);
+           });
        }
+       return Promise.resolve();
     },
     [user, fetchUserData]
   );

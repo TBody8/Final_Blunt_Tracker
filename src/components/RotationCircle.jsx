@@ -59,6 +59,16 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
     return [currentUser];
   });
 
+  // Guardar solo el día modificado
+  useEffect(() => {
+    // If currentUser exists but is not in the rotationUsers list, 
+    // it likely means we switched accounts. Reset to current user.
+    if (currentUser && rotationUsers.length > 0 && !rotationUsers.includes(currentUser)) {
+      setRotationUsers([currentUser]);
+      setPayingUsers([currentUser]);
+    }
+  }, [currentUser, rotationUsers, setRotationUsers, setPayingUsers]);
+
   // Save persistence on changes
   useEffect(() => {
     const dataToSave = {
