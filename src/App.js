@@ -91,11 +91,12 @@ function App() {
 
   const fetchUserData = useCallback((username) => {
     const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+    const t = Date.now();
     return Promise.all([
-      fetch(`${backendUrl}/api/consumption`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : [])),
-      fetch(`${backendUrl}/api/goals`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : {})),
-      fetch(`${backendUrl}/api/settings`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : {})),
-      fetch(`${backendUrl}/api/leaderboard`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : [])),
+      fetch(`${backendUrl}/api/consumption?t=${t}`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : [])),
+      fetch(`${backendUrl}/api/goals?t=${t}`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : {})),
+      fetch(`${backendUrl}/api/settings?t=${t}`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : {})),
+      fetch(`${backendUrl}/api/leaderboard?t=${t}`, { credentials: 'include' }).then((res) => (res.ok ? res.json() : [])),
     ]).then(([consumption, goals, settings, leaderboard]) => {
       setConsumptionData(consumption);
       setGoals(goals);
@@ -138,7 +139,7 @@ function App() {
           setTimeout(() => {
             setShowPWAInstallGuide(true);
             localStorage.setItem(pwaGuideKey, 'true');
-          }, 3000); // Show slightly after update modal resolves or on boot
+          }, 4500); // Show slightly after update modal resolves or on boot
         }
       }
 
