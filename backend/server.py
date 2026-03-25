@@ -341,8 +341,9 @@ async def get_leaderboard():
     
     # Check if cache has data
     today_str = datetime.now().strftime("%Y-%m-%d")
-    if leaderboard_cache["data"] is not None:
-        return leaderboard_cache["data"]
+    # Disable cache to ensure live data in production
+    # if leaderboard_cache["data"] is not None:
+    #     return leaderboard_cache["data"]
         
     try:
         now_str = datetime.utcnow().isoformat()
@@ -634,7 +635,7 @@ async def search_users(
     current_user: str = Depends(get_current_username)
 ):
     try:
-        excluded_list = [current_user]
+        excluded_list = [current_user, "diego"]
         if exclude:
             excluded_list.extend(exclude)
             
