@@ -8,16 +8,10 @@
     "background_color": "#000000",
     "icons": [
         {
-            "src": "fav.png",
-            "sizes": "192x192 512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
             "src": "fav.jpg",
             "sizes": "192x192 512x512 1024x1024 2048x2048",
             "type": "image/jpeg",
-            "purpose": "any"
+            "purpose": "any maskable"
         }
     ],
     "shortcuts": [
