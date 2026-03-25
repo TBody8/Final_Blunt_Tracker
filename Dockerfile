@@ -14,7 +14,7 @@ COPY . .
 RUN CI=false yarn build
 
 # Stage 2: Setup the Python backend and serve
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
