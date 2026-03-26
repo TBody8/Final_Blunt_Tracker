@@ -341,7 +341,7 @@ const AnalyticsView = React.memo(({ isTransitioning, chartView, handleChartViewC
       {chartView === 'daily' && selectedChartDate && (
         <div className="mt-8 border-t border-white/5 pt-8 animate-in fade-in slide-in-from-bottom-5 duration-500">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2" style={{ fontFamily: 'var(--font-primary)' }}>
               <Calendar className="w-5 h-5 text-green-500" />
               {selectedChartDate === new Date().toISOString().split('T')[0] ? 'Sessions Today' : selectedChartDate}
             </h3>
