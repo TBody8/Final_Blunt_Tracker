@@ -435,7 +435,7 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
               <div className="flex flex-col items-center">
                 <div className="mb-2">
                   <img 
-                    src={`/blunt-images/${isFirst ? 'corona_dorada' : rank === 2 ? 'corona_plata' : 'corona_cobre'}.png`} 
+                    src={`/blunt-images/${isFirst ? 'corona_dorada' : rank === 2 ? 'corona_plata' : 'corona_cobre'}.webp`} 
                     alt="Crown Rank"
                     className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.4)] w-16 h-16 md:w-20 md:h-20"
                     loading="eager"
@@ -585,7 +585,7 @@ const TrophiesView = React.memo(({ memoizedStats, onTrophyClick }) => (
         const bluntsRemaining = Math.max(0, nextMin - totalBlunts);
 
         return (
-          <div className="max-w-md mx-auto w-full px-4 -mt-4 mb-2 animate-in fade-in slide-in-from-top-2 duration-700">
+          <div className="max-w-md mx-auto w-full px-4 mt-2 mb-2 animate-in fade-in slide-in-from-top-2 duration-700">
             <div className="flex justify-between items-end mb-1.5 px-1">
               <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Next Level Progress</span>
               <span className="text-[10px] font-black text-[#2eef6a] uppercase tracking-tighter">
