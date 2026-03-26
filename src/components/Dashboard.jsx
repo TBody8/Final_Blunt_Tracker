@@ -360,7 +360,7 @@ const AnalyticsView = React.memo(({ isTransitioning, chartView, handleChartViewC
                      key={idx}
                      className={`bg-gray-900/40 p-4 rounded-2xl flex items-center gap-4 relative border border-white/5 ${deletingDrink === idx ? 'opacity-50 scale-95 blur-sm' : 'hover:bg-white/5'}`}
                    >
-                     <img src="/blunt-images/fav_png.png" className="w-10 h-10 rounded-xl" />
+                     <img src="fav.jpg" className="w-10 h-10 rounded-xl" />
                      <div className="flex-1 overflow-hidden">
                        <p className="font-bold text-white truncate">{mockData.bluntDrinks.find(d => d.id === blunt.id)?.name || 'Blunt'}</p>
                        <p className="text-[10px] text-green-400 font-bold tracking-widest uppercase">📍 {blunt.spot || 'Unknown Spot'}</p>
