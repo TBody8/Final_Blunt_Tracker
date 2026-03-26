@@ -334,7 +334,15 @@ function App() {
 
       setConsumptionData(updatedData);
       
-      if (updatedBlunts.length === 0) {
+      if (deletedBlunt.rotation_id) {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+        fetch(`${backendUrl}/api/rotation/${deletedBlunt.rotation_id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        })
+        .then(() => refreshUserRank())
+        .catch(err => console.error("Error deleting rotation blunt:", err));
+      } else if (updatedBlunts.length === 0) {
         // Delete from backend
         const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
         fetch(`${backendUrl}/api/consumption/${dateStr}`, {

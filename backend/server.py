@@ -56,6 +56,7 @@ class BluntItem(BaseModel):
     price: Optional[float] = 0.0
     weight: Optional[float] = 0.0
     participants: Optional[int] = 1
+    rotation_id: Optional[StrictStr] = Field(None, max_length=100)
 
 class ConsumptionData(BaseModel):
     date: StrictStr = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")  # Formato YYYY-MM-DD
@@ -197,6 +198,7 @@ async def add_rotation(data: RotationData, request: Request, username: str = Dep
     timestamp_str = datetime.utcnow().isoformat()
     
     try:
+        rotation_id = str(uuid.uuid4())
         for user in users_to_update:
             user_price = cost_per_payer if user in actual_payers else 0.0
             
@@ -206,7 +208,8 @@ async def add_rotation(data: RotationData, request: Request, username: str = Dep
                 "timestamp": timestamp_str,
                 "price": user_price,
                 "weight": data.weight,
-                "participants": len(users_to_update)
+                "participants": len(users_to_update),
+                "rotation_id": rotation_id
             }
 
             existing = await consumption_collection.find_one({"date": date_str, "username": user})
@@ -262,6 +265,35 @@ async def delete_consumption(date: str, username: str = Depends(get_current_user
     except Exception as e:
         logging.error(f"Error deleting consumption data: {str(e)}")
         raise HTTPException(status_code=500, detail="Error deleting data")
+
+@api_router.delete("/rotation/{rotation_id}")
+async def delete_rotation(rotation_id: str, username: str = Depends(get_current_username)):
+    global leaderboard_cache
+    try:
+        # Use update_many to remove the blunt from EVERY user's record
+        # 1. First decrement the total count for any record that contains this rotation_id
+        await consumption_collection.update_many(
+            {"blunts.rotation_id": rotation_id},
+            {"$inc": {"totalBlunts": -1}}
+        )
+        
+        # 2. Pull the specific blunt from the array for all users
+        result = await consumption_collection.update_many(
+            {"blunts.rotation_id": rotation_id},
+            {"$pull": {"blunts": {"rotation_id": rotation_id}}}
+        )
+        
+        # 3. Clean up any days that are now empty
+        await consumption_collection.delete_many({"totalBlunts": {"$lte": 0}})
+
+        if result.modified_count > 0:
+            leaderboard_cache["data"] = None
+            leaderboard_cache["last_updated"] = None
+            
+        return {"status": "success", "message": f"Rotation {rotation_id} deleted for all participants"}
+    except Exception as e:
+        logging.error(f"Error deleting rotation: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting rotation data")
 
 @api_router.get("/goals", response_model=Goals)
 async def get_goals(username: str = Depends(get_current_username)):
