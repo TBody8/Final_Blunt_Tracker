@@ -568,9 +568,42 @@ const TrophiesView = React.memo(({ memoizedStats, onTrophyClick }) => (
         <span className="text-3xl">{memoizedStats.currentLevel.badge}</span>
         <p className="text-sm font-black text-[#2eef6a] uppercase tracking-widest bg-[#2eef6a]/10 px-4 py-1.5 rounded-full border border-[#2eef6a]/30">Level {memoizedStats.currentLevel.level}: {memoizedStats.currentLevel.name}</p>
       </div>
+
+      {/* Next Level Progress Bar */}
+      {(() => {
+        const nextLevelDef = mockData.bluntLevels.find(l => l.level === memoizedStats.currentLevel.level + 1);
+        if (!nextLevelDef) return null;
+
+        const currentMin = memoizedStats.currentLevel.minBlunts;
+        const nextMin = nextLevelDef.minBlunts;
+        const totalBlunts = memoizedStats.totalBlunts;
+        
+        // Calculate progress percentage within the current level's range to next
+        const progress = Math.min(100, Math.max(0, ((totalBlunts - currentMin) / (nextMin - currentMin)) * 100));
+        const bluntsRemaining = Math.max(0, nextMin - totalBlunts);
+
+        return (
+          <div className="max-w-md mx-auto w-full px-4 -mt-4 mb-2 animate-in fade-in slide-in-from-top-2 duration-700">
+            <div className="flex justify-between items-end mb-1.5 px-1">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Next Level Progress</span>
+              <span className="text-[10px] font-black text-[#2eef6a] uppercase tracking-tighter">
+                {bluntsRemaining} {bluntsRemaining === 1 ? 'Blunt' : 'Blunts'} to Level {nextLevelDef.level}
+              </span>
+            </div>
+            <div className="h-2 w-full bg-gray-950/60 rounded-full border border-white/5 overflow-hidden p-[2px] shadow-inner">
+              <motion.div 
+                className="h-full bg-gradient-to-r from-[#2eef6a]/40 to-[#2eef6a] rounded-full shadow-[0_0_10px_rgba(46,239,106,0.3)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+        );
+      })()}
     </div>
 
-    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#2eef6a]/40 to-transparent" />
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-[#2eef6a]/40 to-transparent" />
 
     {/* Ascension Box */}
     <div className="bg-gray-950/60 border border-white/10 rounded-[28px] p-6 mb-8 shadow-inner">
