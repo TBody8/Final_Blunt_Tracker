@@ -438,6 +438,8 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
                     src={`/blunt-images/${isFirst ? 'corona_dorada' : rank === 2 ? 'corona_plata' : 'corona_cobre'}.png`} 
                     alt="Crown Rank"
                     className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.4)] w-16 h-16 md:w-20 md:h-20"
+                    loading="eager"
+                    fetchpriority={isFirst ? "high" : "auto"}
                   />
                 </div>
                 

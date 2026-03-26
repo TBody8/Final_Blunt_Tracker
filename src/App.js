@@ -594,6 +594,9 @@ function App() {
                   src={`/blunt-images/${userRank === 1 ? 'corona_dorada' : userRank === 2 ? 'corona_plata' : 'corona_cobre'}.png`} 
                   alt="Crown"
                   className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md -ml-1 md:-ml-2"
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
                 />
                 <span>{userRank}º</span>
               </motion.div>
