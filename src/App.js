@@ -599,37 +599,10 @@ function App() {
               </motion.div>
             )}
           </motion.div>
-           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Desktop Navigation */}
-            <nav className='hidden md:flex items-center gap-6'>
-              <button
-                onClick={() => setShowWrapped(true)}
-                className='relative group overflow-hidden bg-gradient-to-r from-green-600 to-green-500 p-[2px] rounded-full'
-              >
-                <div className='absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine' />
-                <div className='bg-gray-900 rounded-full px-6 py-2 flex items-center gap-2 transition-all hover:bg-gray-900/80'>
-                  <Flame className='w-4 h-4 text-green-400' />
-                  <span className='font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-300'>
-                    Blunt Wrapped
-                  </span>
-                </div>
-              </button>
+          <div className="flex items-center gap-2 sm:gap-4">
+              {/* Universal Logout Button */}
               <motion.button
-                onClick={() => setShowSettings(true)}
-                className='p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-300 hover:scale-105'
-                initial={{ opacity: 0, rotate: -10 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-                whileHover={{ scale: 1.1, rotate: 10 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <SettingsIcon className='w-6 h-6' />
-              </motion.button>
-            </nav>
-
-            {/* Universal Logout Button */}
-            <motion.button
-              onClick={handleLogout}
+                onClick={handleLogout}
               className="group flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all duration-300 transform-gpu z-20 mr-12"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
