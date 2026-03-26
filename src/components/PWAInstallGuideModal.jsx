@@ -21,7 +21,7 @@ const steps = [
   {
     image: '/tutorial-images/tut-4.webp',
     title: '¡Usa los Atajos Rápidos!',
-    description: 'Mantén pulsado el icono de la app para acceder para añadir tus latas. (Solo funciona en Android, en iOS no está disponible).',
+    description: 'Mantén pulsado el icono de la app para acceder y añadir tus blunts. (Solo funciona en Android, en iOS no está disponible).',
   }
 ];
 
