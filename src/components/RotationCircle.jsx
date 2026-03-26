@@ -348,7 +348,7 @@ const RotationCircle = ({ currentUser, onAddRotation, isLoading }) => {
             <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md 
                 ${isPayer ? 'text-green-400 border border-green-500/30' : 'text-gray-300'}`}>
-                {isMe ? 'You' : user}
+                {isMe ? 'You' : <span className={user === 'ilenia\u3164\u2661' ? 'special-user-ilenia' : ''}>{user}</span>}
               </span>
             </div>
 

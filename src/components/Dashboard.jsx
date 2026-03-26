@@ -443,7 +443,7 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
                   />
                 </div>
                 
-                <h3 className={`blunt-title text-3xl md:text-4xl tracking-wide truncate max-w-[150px] text-center ${user.username === 'lil.nia_' ? 'text-pink-300' : isFirst ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : ''}`}>
+                <h3 className={`blunt-title text-3xl md:text-4xl tracking-wide truncate max-w-[150px] text-center ${user.username === 'ilenia\u3164\u2661' ? 'special-user-ilenia' : user.username === 'lil.nia_' ? 'text-pink-300' : isFirst ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : ''}`}>
                   {user.username}
                 </h3>
               </div>
@@ -538,7 +538,7 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
               >
                 <div className="col-span-2 flex items-center gap-2 md:gap-4 overflow-hidden">
                   <span className="text-gray-500 font-mono text-xs">#{idx + 4}</span>
-                  <span className={`font-bold text-xs sm:text-lg md:text-2xl truncate ${user.username === 'lil.nia_' ? 'text-pink-300' : 'text-gray-200'}`}>
+                  <span className={`font-bold text-xs sm:text-lg md:text-2xl truncate ${user.username === 'ilenia\u3164\u2661' ? 'special-user-ilenia' : user.username === 'lil.nia_' ? 'text-pink-300' : 'text-gray-200'}`}>
                     {user.username}
                   </span>
                 </div>

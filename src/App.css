@@ -99,6 +99,18 @@ select:focus {
   }
 }
 
+@keyframes pink-glow-cycle {
+  0% { color: #ffb6c1; text-shadow: 0 0 10px rgba(255, 182, 193, 0.4); filter: hue-rotate(0deg); }
+  50% { color: #ff85a2; text-shadow: 0 0 20px rgba(255, 133, 162, 0.7); filter: hue-rotate(15deg); }
+  100% { color: #ffb6c1; text-shadow: 0 0 10px rgba(255, 182, 193, 0.4); filter: hue-rotate(0deg); }
+}
+
+.special-user-ilenia {
+  animation: pink-glow-cycle 4s ease-in-out infinite !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+}
+
 .fixed-background {
   position: fixed;
   top: 0;
