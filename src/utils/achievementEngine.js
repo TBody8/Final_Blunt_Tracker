@@ -1,5 +1,5 @@
 import { TROPHY_LEVELS, OPTIONAL_ACHIEVEMENTS } from '../data/trophyDefinitions';
-import { calculateStreak } from '../data/mockData';
+import { calculateBestStreak } from '../data/mockData';
 
 export const calculateAchievements = (consumptionData, currentUser) => {
   const stats = {
@@ -13,7 +13,7 @@ export const calculateAchievements = (consumptionData, currentUser) => {
     buddySessions: {}, // Buddy -> count
     weeklyCounts: {}, // ISO week -> count
     buddySessions: {}, // Buddy -> count
-    streak: calculateStreak(consumptionData),
+    streak: calculateBestStreak(consumptionData),
     freeloaderCount: 0,
     nightSmokerCount: 0,
     morningSmokerCount: 0,
@@ -22,7 +22,9 @@ export const calculateAchievements = (consumptionData, currentUser) => {
     largeRotationCount: 0,
     fattyBluntCount: 0,
     dailyMax: 0,
-    totalWeight: 0
+    totalWeight: 0,
+    lateNightCount: 0,
+    totalCostStat: 0
   };
 
   consumptionData.forEach(day => {
@@ -42,9 +44,12 @@ export const calculateAchievements = (consumptionData, currentUser) => {
       }
 
       // Time of Day Check
-      if (blunt.date) {
-        const h = new Date(blunt.date).getHours();
+      const timeStr = blunt.timestamp || blunt.date;
+      if (timeStr) {
+        const dStr = timeStr.endsWith('Z') ? timeStr : timeStr + 'Z';
+        const h = new Date(dStr).getUTCHours();
         if (h >= 0 && h < 5) stats.nightSmokerCount++;
+        if (h >= 2 && h < 5) stats.lateNightCount++;   // El Insomne
         if (h >= 5 && h < 11) stats.morningSmokerCount++;
       }
 
@@ -54,6 +59,7 @@ export const calculateAchievements = (consumptionData, currentUser) => {
       // 2. Sponsorship
       if (blunt.price > 0) {
         stats.sponsorCount++;
+        stats.totalCostStat += blunt.price;             // Donde Fue Mi Dinero
         if (blunt.participants >= 4) stats.sponsorGroupCount++;
       }
 
@@ -133,6 +139,9 @@ export const calculateAchievements = (consumptionData, currentUser) => {
       case 'spot_explorer': progress = stats.uniqueSpots.size; break;
       case 'daily_max': progress = stats.dailyMax; break;
       case 'total_weight': progress = stats.totalWeight; break;
+      case 'late_night': progress = stats.lateNightCount; break;
+      case 'total_cost': progress = stats.totalCostStat; break;
+      case 'sponsor_group': progress = stats.sponsorGroupCount; break;
       default: progress = 0;
     }
     const achieved = progress >= trophy.goal;

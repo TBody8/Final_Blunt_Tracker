@@ -94,6 +94,17 @@ async def get_consumption_data(username: str = Depends(get_current_username)):
         logging.error(f"Error fetching consumption data: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching data")
 
+@api_router.get("/user/{profile_username}/consumption", response_model=List[ConsumptionData])
+async def get_user_profile_consumption(profile_username: str):
+    # This endpoint allows anyone to see the public consumption history of an opponent on the leaderboard.
+    try:
+        cursor = consumption_collection.find({"username": profile_username}).sort("date", -1)
+        data = await cursor.to_list(length=2000)
+        return [ConsumptionData(**item) for item in data]
+    except Exception as e:
+        logging.error(f"Error fetching profile consumption data: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching profile data")
+
 from fastapi import Request
 
 @api_router.post("/consumption", response_model=ConsumptionData)
@@ -370,7 +381,7 @@ async def update_settings(settings: Settings, username: str = Depends(get_curren
 
 # RUTA DE LEADERBOARD RANKEDS
 @api_router.get("/leaderboard")
-async def get_leaderboard():
+async def get_leaderboard(type: Optional[str] = "general"):
     global leaderboard_cache
     
     # Check if cache has data
@@ -384,8 +395,13 @@ async def get_leaderboard():
         banned_users_cursor = await users_collection.find({"ban_until": {"$gt": now_str}}).to_list(1000)
         excluded_usernames = ["diego"] + [u.get("username") for u in banned_users_cursor if u.get("username")]
 
+        match_stage = {"username": {"$nin": excluded_usernames}}
+        if type == "monthly":
+            current_month = datetime.utcnow().strftime("%Y-%m")
+            match_stage["date"] = {"$regex": f"^{current_month}-"}
+
         pipeline = [
-            {"$match": {"username": {"$nin": excluded_usernames}}},
+            {"$match": match_stage},
             {"$group": {
                 "_id": "$username",
                 "totalBlunts": {"$sum": {"$toInt": {"$ifNull": ["$totalBlunts", 0]}}},
@@ -426,9 +442,25 @@ async def get_leaderboard():
         cursor = consumption_collection.aggregate(pipeline)
         leaderboard_data = await cursor.to_list(length=100)
         
+        # Inject all-time real total blunts for user levels
+        all_time_pipeline = [
+            {"$match": {"username": {"$nin": excluded_usernames}}},
+            {"$group": {
+                "_id": "$username",
+                "realTotalBlunts": {"$sum": {"$toInt": {"$ifNull": ["$totalBlunts", 0]}}}
+            }}
+        ]
+        all_time_cursor = consumption_collection.aggregate(all_time_pipeline)
+        all_time_data = await all_time_cursor.to_list(length=None)
+        all_time_map = {d["_id"]: d["realTotalBlunts"] for d in all_time_data}
+        
+        for user in leaderboard_data:
+            # If monthly, give them their all-time for level, but keep their filtered total for display
+            user["realTotalBlunts"] = all_time_map.get(user["username"], 0)
+        
         # Calculate streaks
         dates_pipeline = [
-            {"$match": {"username": {"$nin": excluded_usernames}}},
+            {"$match": match_stage},
             {"$group": {
                 "_id": "$username",
                 "dates": {"$push": "$date"}
@@ -548,7 +580,7 @@ async def get_leaderboard():
                 ])
                 top_3_blunts = await blunts_cursor.to_list(length=None)
                 
-                stats = {u: {"freeloader": 0, "night": 0, "morning": 0, "sponsor": 0, "solo": 0, "large": 0, "fatty": 0, "unique_spots": set(), "daily_counts": {}, "total_weight": 0.0} for u in top_3_usernames}
+                stats = {u: {"freeloader": 0, "night": 0, "morning": 0, "late_night": 0, "sponsor": 0, "sponsor_group": 0, "solo": 0, "large": 0, "fatty": 0, "unique_spots": set(), "daily_counts": {}, "total_weight": 0.0, "total_cost": 0.0} for u in top_3_usernames}
                 
                 for item in top_3_blunts:
                     uname = item.get("username")
@@ -560,6 +592,9 @@ async def get_leaderboard():
                         st["freeloader"] += 1
                     if blunt.get("price", 0) > 0:
                         st["sponsor"] += 1
+                        st["total_cost"] += float(blunt.get("price", 0))
+                        if blunt.get("participants", 0) >= 4:
+                            st["sponsor_group"] += 1
                     if blunt.get("participants", 0) == 1:
                         st["solo"] += 1
                     if blunt.get("participants", 0) >= 7:
@@ -579,6 +614,8 @@ async def get_leaderboard():
                             h = dt.hour
                             if 0 <= h < 5:
                                 st["night"] += 1
+                            if 2 <= h < 5:
+                                st["late_night"] += 1
                             elif 5 <= h < 11:
                                 st["morning"] += 1
                             day_key = dt.strftime("%Y-%m-%d")
@@ -597,7 +634,7 @@ async def get_leaderboard():
                     if st.get("freeloader", 0) >= 10:
                         medals.append({"id": "el_junador", "icon": "🪳", "name": "El Mayor Junador", "priority": 1})
                     if st.get("solo", 0) >= 20:
-                        medals.append({"id": "lone_wolf", "icon": "🎧", "name": "Autista Empedernido", "priority": 2})
+                        medals.append({"id": "lone_wolf", "icon": "🤕", "name": "Autista Empedernido", "priority": 2})
                     if st.get("large", 0) >= 1:
                         medals.append({"id": "shaman", "icon": "🧙‍♂️", "name": "El Chamán", "priority": 3})
                     if st.get("fatty", 0) >= 1:
@@ -618,6 +655,14 @@ async def get_leaderboard():
                         medals.append({"id": "sugar_daddy", "icon": "💸", "name": "Sugar Daddy", "priority": 11})
                     if u.get("totalBluntsCount", 0) >= 100:
                         medals.append({"id": "veteran", "icon": "🎖️", "name": "Veteran Smoker", "priority": 12})
+                    if st.get("late_night", 0) >= 5:
+                        medals.append({"id": "insomne", "icon": "🌙", "name": "El Insomne", "priority": 13})
+                    if st.get("total_cost", 0.0) >= 75:
+                        medals.append({"id": "wallet", "icon": "💶", "name": "¿Dónde Fue Mi Dinero?", "priority": 14})
+                    if st.get("sponsor_group", 0) >= 5:
+                        medals.append({"id": "mecenas", "icon": "🎭", "name": "El Mecenas", "priority": 15})
+                    if st.get("solo", 0) >= 50:
+                        medals.append({"id": "fantasma", "icon": "💀", "name": "El Fantasma", "priority": 16})
                         
                     medals.sort(key=lambda x: x["priority"])
                     u["optional_achievements"] = medals

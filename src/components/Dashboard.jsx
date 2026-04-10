@@ -41,6 +41,7 @@ import { debounce } from '../utils/performance';
 import * as mockData from '../data/mockData';
 import { calculateAchievements } from '../utils/achievementEngine';
 import { TROPHY_LEVELS } from '../data/trophyDefinitions';
+import Counter from './Counter';
 
 // Lazy load non-critical components
 const RotationCircle = lazy(() => import('./RotationCircle'));
@@ -64,14 +65,20 @@ const getChartData = mockData.getChartData;
 const calculateBestStreak = mockData.calculateBestStreak;
 
 const getPlayerRankInfo = (blunts) => {
-  if (blunts >= 1000) return { title: "Snoop's Disciple", textClass: "text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-amber-400 to-yellow-600 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-pulse", iconClass: "text-yellow-300" };
-  if (blunts >= 500) return { title: "Cloud King", textClass: "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]", iconClass: "text-yellow-400" };
-  if (blunts >= 250) return { title: "Blunt Connoisseur", textClass: "text-pink-400 drop-shadow-[0_0_5px_rgba(236,72,153,0.5)]", iconClass: "text-pink-400" };
-  if (blunts >= 100) return { title: "Master Lungs", textClass: "text-purple-400 drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]", iconClass: "text-purple-400" };
-  if (blunts >= 50) return { title: "Veteran Chief", textClass: "text-blue-400", iconClass: "text-blue-500" };
-  if (blunts >= 25) return { title: "Daily Burner", textClass: "text-emerald-400", iconClass: "text-emerald-500" };
-  if (blunts >= 10) return { title: "Apprentice Roller", textClass: "text-green-400", iconClass: "text-green-500" };
-  return { title: "Rookie Smoker", textClass: "text-gray-400", iconClass: "text-gray-500" };
+  if (blunts >= 301) return { title: "Snoop Dogg Status", textClass: "text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-amber-400 to-yellow-600 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-pulse", iconClass: "text-yellow-300" };
+  if (blunts >= 151) return { title: "Iron Lungs",        textClass: "text-purple-400 drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]", iconClass: "text-purple-400" };
+  if (blunts >= 51)  return { title: "Rotation King",     textClass: "text-blue-400", iconClass: "text-blue-500" };
+  if (blunts >= 11)  return { title: "Daily Puff",         textClass: "text-emerald-400", iconClass: "text-emerald-500" };
+  return               { title: "Rookie Smoker",           textClass: "text-gray-400", iconClass: "text-gray-500" };
+};
+
+const getRankedFilteredMedals = (medals) => {
+  if (!medals) return [];
+  const ids = medals.map(m => m.id);
+  const toHide = [];
+  if (ids.includes('fantasma')) toHide.push('lone_wolf');
+  if (ids.includes('insomne')) toHide.push('night_owl');
+  return medals.filter(m => !toHide.includes(m.id));
 };
 
 const calculateTotalBlunts = mockData.calculateTotalBlunts;
@@ -131,7 +138,7 @@ const BottomNavbar = React.memo(({ activeTab, setActiveTab }) => {
 });
 BottomNavbar.displayName = 'BottomNavbar';
 
-const RankedStrip = React.memo(({ leaderboardData }) => {
+const RankedStrip = React.memo(({ leaderboardData, onUserClick }) => {
   const top3 = useMemo(() => 
     (leaderboardData || [])
       .sort((a, b) => (b.totalBlunts || 0) - (a.totalBlunts || 0))
@@ -170,9 +177,10 @@ const RankedStrip = React.memo(({ leaderboardData }) => {
           return (
             <motion.div 
               key={user.username}
+              onClick={() => onUserClick && onUserClick(user.username)}
               initial={false} // Disable initial animation for performance
-              className={`px-2 sm:px-4 md:px-5 py-2 md:py-3 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 transform-gpu flex-1 max-w-[120px] sm:max-w-none
-                ${isFirst ? 'shadow-lg z-10 scale-[1.05]' : 'opacity-80 scale-[0.95]'}`}
+              className={`cursor-pointer px-2 sm:px-4 md:px-5 py-2 md:py-3 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 transform-gpu flex-1 max-w-[120px] sm:max-w-none
+                ${isFirst ? 'shadow-lg z-10 scale-[1.05]' : 'opacity-80 scale-[0.95]'} hover:scale-105`}
               style={{ 
                 backgroundColor: style.bg, 
                 borderColor: style.border,
@@ -193,7 +201,7 @@ const RankedStrip = React.memo(({ leaderboardData }) => {
                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate mr-1" style={{ color: style.color }}>LVL {user.level || 1}</span>
                  {user.optional_achievements && user.optional_achievements.length > 0 && (
                    <span className="flex items-center gap-0.5 opacity-90 border-l border-white/10 pl-1.5 ml-0.5">
-                     {user.optional_achievements.slice(0, 2).map(m => (
+                     {getRankedFilteredMedals(user.optional_achievements).slice(0, 2).map(m => (
                         <span key={m.id} className="text-[10px] sm:text-[11px] drop-shadow-md" title={m.name}>{m.icon}</span>
                      ))}
                    </span>
@@ -208,7 +216,7 @@ const RankedStrip = React.memo(({ leaderboardData }) => {
 });
 RankedStrip.displayName = 'RankedStrip';
 
-const HomeView = React.memo(({ todayQuote, leaderboardData, memoizedStats, todayData, currentUser, onDrinkSelect, isTransitioning }) => (
+const HomeView = React.memo(({ todayQuote, leaderboardData, memoizedStats, todayData, currentUser, onDrinkSelect, isTransitioning, onUserClick }) => (
   <div className="space-y-8 animate-in fade-in duration-500">
     {/* Quote & Ranked Strip */}
     <div className="space-y-4">
@@ -229,32 +237,64 @@ const HomeView = React.memo(({ todayQuote, leaderboardData, memoizedStats, today
           {todayQuote}
         </div>
       </div>
-      <RankedStrip leaderboardData={leaderboardData} />
+      <RankedStrip leaderboardData={leaderboardData} onUserClick={onUserClick} />
     </div>
 
     {/* Unified Dashboard Command Center */}
     <div className="grid grid-cols-2 gap-3 md:gap-4 max-w-xl mx-auto">
       <div className="bg-gray-900/60 border border-[#2eef6a]/20 p-3 sm:p-4 rounded-2xl text-center flex flex-col justify-center shadow-inner transition-shadow duration-300 transform-gpu hover:shadow-[0_0_20px_rgba(46,239,106,0.15)]">
         <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[#2eef6a] font-black mb-0.5 sm:mb-1">Total Blunts</p>
-        <p className="text-xl sm:text-2xl md:text-3xl font-black text-white truncate drop-shadow-md">{memoizedStats.totalBlunts || 0}</p>
+        <div className="text-xl sm:text-2xl md:text-3xl font-black text-white truncate drop-shadow-md flex justify-center">
+          <Counter 
+            value={memoizedStats.totalBlunts || 0} 
+            fontSize={22} 
+            padding={4} 
+            horizontalPadding={0}
+            fontWeight={900}
+          />
+        </div>
       </div>
 
       <div className="bg-gray-900/60 border border-yellow-500/20 p-3 sm:p-4 rounded-2xl text-center flex flex-col justify-center shadow-inner transition-shadow duration-300 transform-gpu hover:shadow-[0_0_20px_rgba(234,179,8,0.15)]">
         <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-yellow-500 font-black mb-0.5 sm:mb-1">Investment</p>
-        <p className="text-xl sm:text-2xl md:text-3xl font-black text-white truncate drop-shadow-md">{(memoizedStats.totalCost || 0).toFixed(2)} €</p>
+        <div className="text-xl sm:text-2xl md:text-3xl font-black text-white truncate drop-shadow-md flex items-center justify-center gap-1">
+          <Counter 
+            value={(memoizedStats.totalCost || 0).toFixed(2)} 
+            fontSize={22} 
+            padding={4} 
+            horizontalPadding={0}
+            fontWeight={900}
+          />
+          <span className="text-white font-black">€</span>
+        </div>
       </div>
 
       <div className="bg-gray-950/40 p-3 sm:p-4 rounded-2xl border border-white/5 shadow-lg flex flex-col items-center justify-center text-center transition-colors duration-300 transform-gpu hover:bg-white/5">
-        <p className="text-2xl sm:text-3xl font-black text-[#2eef6a] tracking-tighter truncate w-full">
-          {todayData.blunts ? todayData.blunts.length : 0}
-        </p>
+        <div className="text-2xl sm:text-3xl font-black text-[#2eef6a] tracking-tighter truncate w-full flex justify-center">
+          <Counter 
+            value={todayData.blunts ? todayData.blunts.length : 0} 
+            fontSize={26} 
+            gap={0}
+            horizontalPadding={0}
+            textColor="#2eef6a" 
+            fontWeight={900}
+          />
+        </div>
         <p className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold mt-0.5 max-w-full truncate px-1">Blunts Today</p>
       </div>
 
       <div className="bg-gray-950/40 p-3 sm:p-4 rounded-2xl border border-white/5 shadow-lg flex flex-col items-center justify-center text-center transition-colors duration-300 transform-gpu hover:bg-white/5">
-        <p className="text-2xl sm:text-3xl font-black text-orange-400 tracking-tighter truncate w-full flex items-center justify-center gap-1">
-          {memoizedStats.streak} <Flame className="w-5 h-5 sm:w-6 sm:h-6" />
-        </p>
+        <div className="text-2xl sm:text-3xl font-black text-orange-400 tracking-tighter truncate w-full flex items-center justify-center gap-1 px-1">
+          <Counter 
+            value={memoizedStats.streak} 
+            fontSize={26} 
+            gap={0}
+            horizontalPadding={0}
+            textColor="#fb923c" 
+            fontWeight={900}
+          />
+          <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />
+        </div>
         <p className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold mt-0.5 max-w-full truncate px-1">Current Streak</p>
       </div>
     </div>
@@ -282,7 +322,7 @@ const HomeView = React.memo(({ todayQuote, leaderboardData, memoizedStats, today
 ));
 HomeView.displayName = 'HomeView';
 
-const AnalyticsView = React.memo(({ isTransitioning, chartView, handleChartViewChange, memoizedStats, chartOptions, chartData, selectedChartDate, consumptionData, deletingDrink, handleDeleteDrink, chartRef, chartMonthOffset, setChartMonthOffset, setSelectedChartDate, mockData }) => (
+const AnalyticsView = React.memo(({ isTransitioning, chartView, handleChartViewChange, memoizedStats, chartOptions, chartData, selectedChartDate, consumptionData, deletingDrink, handleDeleteDrink, chartRef, chartMonthOffset, setChartMonthOffset, setSelectedChartDate, mockData, isReadOnly = false }) => (
   <div className="mt-4 bg-gray-950/40 rounded-[40px] p-6 md:p-10 border border-white/5 shadow-2xl space-y-10 overflow-hidden animate-in fade-in duration-500">
     <div className="flex flex-col items-center gap-6 mb-8 text-center pt-4 md:pt-6">
       <h2 className="text-3xl sm:text-4xl md:text-6xl blunt-title text-white w-full leading-normal">Consumption Stats</h2>
@@ -297,22 +337,55 @@ const AnalyticsView = React.memo(({ isTransitioning, chartView, handleChartViewC
       <div className="bg-gray-950/60 p-4 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden group">
         <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <p className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-1 relative z-10 w-full truncate">Total Blunts</p>
-        <p className="text-2xl sm:text-3xl font-black text-[#2eef6a] relative z-10 font-mono">{memoizedStats.totalBlunts || 0}</p>
+        <div className="text-2xl sm:text-3xl font-black text-[#2eef6a] relative z-10 font-mono flex justify-center">
+          <Counter 
+            value={memoizedStats.totalBlunts || 0} 
+            fontSize={24} 
+            horizontalPadding={0}
+            textColor="#2eef6a" 
+            fontWeight={900}
+          />
+        </div>
       </div>
       <div className="bg-gray-950/60 p-4 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden group">
         <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <p className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-1 relative z-10 w-full truncate">Total Invested</p>
-        <p className="text-2xl sm:text-3xl font-black text-yellow-400 relative z-10 font-mono">{(memoizedStats.totalCost || 0).toFixed(0)}€</p>
+        <div className="text-2xl sm:text-3xl font-black text-yellow-400 relative z-10 font-mono flex items-center justify-center gap-1">
+          <Counter 
+            value={(memoizedStats.totalCost || 0).toFixed(0)} 
+            fontSize={24} 
+            horizontalPadding={0}
+            textColor="#facc15" 
+            fontWeight={900}
+          />
+          <span className="text-yellow-400 font-mono">€</span>
+        </div>
       </div>
       <div className="bg-gray-950/60 p-4 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden group">
         <div className="absolute inset-0 bg-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <p className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-1 relative z-10 w-full truncate">Active Days</p>
-        <p className="text-2xl sm:text-3xl font-black text-orange-400 relative z-10 font-mono">{memoizedStats.streak || 0}</p>
+        <div className="text-2xl sm:text-3xl font-black text-orange-400 relative z-10 font-mono flex justify-center">
+          <Counter 
+            value={memoizedStats.streak || 0} 
+            fontSize={24} 
+            horizontalPadding={0}
+            textColor="#fb923c" 
+            fontWeight={900}
+          />
+        </div>
       </div>
       <div className="bg-gray-950/60 p-4 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden group">
         <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <p className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-1 relative z-10 w-full truncate">Levels Gained</p>
-        <p className="text-2xl sm:text-3xl font-black text-purple-400 relative z-10 font-mono">{memoizedStats.currentLevel.level || 1}</p>
+        <div className="text-2xl sm:text-3xl font-black text-purple-400 relative z-10 font-mono flex justify-center">
+          <Counter 
+            value={memoizedStats.currentLevel.level || 1} 
+            fontSize={24} 
+            horizontalPadding={0}
+            textColor="#c084fc" 
+            fontWeight={900}
+          />
+        </div>
       </div>
     </div>
 
@@ -385,24 +458,71 @@ const AnalyticsView = React.memo(({ isTransitioning, chartView, handleChartViewC
 ));
 AnalyticsView.displayName = 'AnalyticsView';
 
-const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
+const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo, onUserClick }) => {
+  const [rankView, setRankView] = useState('monthly');
+  const [localLeaderboard, setLocalLeaderboard] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (rankView === 'general') {
+      setLocalLeaderboard(null); // Use the global one
+      return;
+    }
+
+    const fetchMonthly = async () => {
+      setLoading(true);
+      try {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+        const res = await fetch(`${backendUrl}/api/leaderboard?type=monthly&t=${Date.now()}`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLocalLeaderboard(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMonthly();
+  }, [rankView, leaderboardData]);
+
+  const displayData = rankView === 'monthly' && localLeaderboard ? localLeaderboard : leaderboardData;
+
+  return (
   <div className="mt-4 bg-gray-950/40 rounded-[40px] p-6 md:p-10 border border-white/5 shadow-2xl space-y-10 overflow-hidden animate-in fade-in duration-500">
-    <div className="text-center mb-8">
-      <h2 className="text-4xl blunt-title text-white tracking-widest mb-2">The Elite Circle</h2>
-      <p className="text-yellow-400/80 text-xs font-bold uppercase tracking-[0.3em]">Top Ranking Commanders</p>
+    <div className="flex flex-col items-center gap-6 mb-8 text-center pt-2">
+      <h2 className="text-4xl blunt-title text-white tracking-widest mb-0">The Elite Circle</h2>
+      
+      <div className='flex gap-2 bg-gray-950/60 p-1.5 rounded-2xl border border-white/10 shadow-lg shrink-0 z-10'>
+        <button onClick={() => setRankView('monthly')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300 transform-gpu ${rankView === 'monthly' ? 'bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'text-gray-500 hover:text-white'}`}>Mensual</button>
+        <button onClick={() => setRankView('general')} className={`px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300 transform-gpu ${rankView === 'general' ? 'bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'text-gray-500 hover:text-white'}`}>General</button>
+      </div>
+
+      <p className="text-yellow-400/80 text-xs font-bold uppercase tracking-[0.3em]">{rankView === 'monthly' ? 'Mensual' : 'Top'} Ranking Commanders</p>
     </div>
     
+    {loading ? (
+      <div className="text-center text-gray-500 py-20 animate-pulse font-mono flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        Calculating Standings...
+      </div>
+    ) : (
+      <>
     {/* Podium Top 3 View */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      {leaderboardData.slice(0, 3).map((user, index) => {
+      {displayData.slice(0, 3).map((user, index) => {
         const rank = index + 1;
         const isFirst = rank === 1;
-        const rankInfo = getPlayerRankInfo(user.totalBlunts || 0);
+        const rankInfo = getPlayerRankInfo(user.realTotalBlunts ?? user.totalBlunts ?? 0);
 
         return (
           <div 
             key={user.username}
-            className={`relative flex flex-col items-center p-6 sm:p-8 rounded-2xl border backdrop-blur-lg overflow-hidden transition-all duration-500 hover:scale-[1.02] ${
+            onClick={() => onUserClick && onUserClick(user.username)}
+            className={`cursor-pointer relative flex flex-col items-center p-6 sm:p-8 rounded-2xl border backdrop-blur-lg overflow-hidden transition-all duration-500 hover:scale-[1.02] ${
               isFirst 
                 ? 'md:-mt-4 bg-gradient-to-b from-yellow-500/20 to-gray-950/80 border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]' 
                 : rank === 2
@@ -412,11 +532,12 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
           >
             {isFirst && <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300"></div>}
             
-            <div className="relative flex flex-row items-start justify-center w-full gap-4 sm:gap-6 mt-4 mb-4">
+            <div className="relative flex flex-row items-start justify-center w-full gap-0 mt-4 h-full">
               {/* Left Medals */}
-              <div className="flex flex-row-reverse gap-2 z-20 items-start">
+              <div className="flex flex-row-reverse gap-2 z-20 items-start self-start">
                 {(() => {
-                  const medals = (user.optional_achievements || []).filter((_, i) => i % 2 === 0);
+                  const filtered = getRankedFilteredMedals(user.optional_achievements);
+                  const medals = filtered.filter((_, i) => i % 2 === 0);
                   const chunks = [];
                   for (let i = 0; i < medals.length; i += 4) chunks.push(medals.slice(i, i + 4));
                   return chunks.map((chunk, ci) => (
@@ -431,8 +552,8 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
                 })()}
               </div>
 
-              {/* Center Section: Image + Name */}
-              <div className="flex flex-col items-center">
+              {/* Center Section: Everything vertically stacked */}
+              <div className="flex flex-col items-center w-[120px] flex-shrink-0 z-10 px-2">
                 <div className="mb-2">
                   <img 
                     src={`/blunt-images/${isFirst ? 'corona_dorada' : rank === 2 ? 'corona_plata' : 'corona_cobre'}.webp`} 
@@ -443,15 +564,43 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
                   />
                 </div>
                 
-                <h3 className={`blunt-title text-3xl md:text-4xl tracking-wide truncate max-w-[150px] text-center ${user.username === 'ilenia\u3164\u2661' ? 'special-user-ilenia' : user.username === 'lil.nia_' ? 'text-pink-300' : isFirst ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : ''}`}>
-                  {user.username}
-                </h3>
+                {(() => {
+                  const len = user.username.length;
+                  const fsPx = Math.max(13, Math.min(38, Math.floor(112 / (len * 0.68))));
+                  return (
+                    <h3
+                      className={`blunt-title tracking-wide w-full text-center whitespace-nowrap overflow-hidden leading-tight ${user.username === 'ilenia\u3164\u2661' ? 'special-user-ilenia' : user.username === 'lil.nia_' ? 'text-pink-300' : isFirst ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : ''}`}
+                      style={{ fontSize: `${fsPx}px` }}
+                    >
+                      {user.username}
+                    </h3>
+                  );
+                })()}
+
+                <p className={`flex justify-center items-center gap-1 text-[11px] font-bold mt-2 ${rankInfo.textClass}`}>
+                  <Star className={`w-3 h-3 ${rankInfo.iconClass}`} /> {rankInfo.title}
+                </p>
+
+                <div className="mt-2 text-center">
+                  <div className={`text-2xl font-black tracking-tighter flex justify-center ${isFirst ? 'text-yellow-400' : 'text-white'}`}>
+                    <Counter 
+                      value={user.totalBlunts || 0} 
+                      fontSize={24} 
+                      gap={0}
+                      horizontalPadding={0}
+                      textColor={isFirst ? '#facc15' : '#ffffff'} 
+                      fontWeight={900}
+                    />
+                  </div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-0">Blunts Smoked</p>
+                </div>
               </div>
 
               {/* Right Medals */}
-              <div className="flex flex-row gap-2 z-20 items-start">
+              <div className="flex flex-row gap-2 z-20 items-start self-start">
                 {(() => {
-                  const medals = (user.optional_achievements || []).filter((_, i) => i % 2 !== 0);
+                  const filtered = getRankedFilteredMedals(user.optional_achievements);
+                  const medals = filtered.filter((_, i) => i % 2 !== 0);
                   const chunks = [];
                   for (let i = 0; i < medals.length; i += 4) chunks.push(medals.slice(i, i + 4));
                   return chunks.map((chunk, ci) => (
@@ -465,17 +614,6 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
                   ));
                 })()}
               </div>
-            </div>
-
-            <p className={`flex justify-center items-center gap-1 text-[11px] font-bold mt-0.5 ${rankInfo.textClass}`}>
-              <Star className={`w-3 h-3 ${rankInfo.iconClass}`} /> {rankInfo.title}
-            </p>
-            
-            <div className="mt-1 text-center">
-              <div className={`text-3xl font-black tracking-tighter ${isFirst ? 'text-yellow-400' : 'text-white'}`}>
-                {user.totalBlunts}
-              </div>
-              <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-0.5">Blunts Smoked</p>
             </div>
 
             <div className="w-full mt-4 space-y-1.5 border-t border-white/5 pt-4">
@@ -519,7 +657,7 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
     </div>
 
     {/* The Rest of the Ladder */}
-    {leaderboardData.length > 3 && (
+    {displayData.length > 3 && (
       <div className="bg-gray-950/60 rounded-2xl border border-white/5 overflow-hidden shadow-xl mb-[100px]">
         <div className="grid grid-cols-5 gap-1 sm:gap-2 md:gap-4 p-4 sm:p-6 text-[8px] sm:text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-white/5 bg-black/40">
           <div className="col-span-2 pl-1 sm:pl-2">Dominator</div>
@@ -529,12 +667,13 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
         </div>
         
         <div className="divide-y divide-white/5">
-          {leaderboardData.slice(3).map((user, idx) => {
-            const rankInfo = getPlayerRankInfo(user.totalBlunts || 0);
+          {displayData.slice(3).map((user, idx) => {
+            const rankInfo = getPlayerRankInfo(user.realTotalBlunts ?? user.totalBlunts ?? 0);
             return (
               <div 
                 key={user.username}
-                className="grid grid-cols-5 gap-1 sm:gap-2 md:gap-4 p-4 sm:p-6 items-center hover:bg-white/5 transition-colors"
+                onClick={() => onUserClick && onUserClick(user.username)}
+                className="cursor-pointer grid grid-cols-5 gap-1 sm:gap-2 md:gap-4 p-4 sm:p-6 items-center hover:bg-white/5 transition-colors"
               >
                 <div className="col-span-2 flex items-center gap-2 md:gap-4 overflow-hidden">
                   <span className="text-gray-500 font-mono text-xs">#{idx + 4}</span>
@@ -558,8 +697,11 @@ const LeaderboardView = React.memo(({ leaderboardData, getPlayerRankInfo }) => (
         </div>
       </div>
     )}
+    </>
+    )}
   </div>
-));
+  );
+});
 LeaderboardView.displayName = 'LeaderboardView';
 
 const TrophiesView = React.memo(({ memoizedStats, onTrophyClick }) => (
@@ -667,6 +809,346 @@ const TrophiesView = React.memo(({ memoizedStats, onTrophyClick }) => (
 ));
 TrophiesView.displayName = 'TrophiesView';
 
+export const UserProfileModal = React.memo(({ username, onClose }) => {
+  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState([]);
+  const [chartView, setChartView] = useState('daily');
+  const [chartMonthOffset, setChartMonthOffset] = useState(0);
+  const [selectedBadge, setSelectedBadge] = useState(null);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      setLoading(true);
+      try {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+        const res = await fetch(`${backendUrl}/api/user/${username}/consumption?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProfileData(data);
+        }
+      } catch (err) {
+        console.error("Error fetching profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (username) fetchProfileData();
+  }, [username]);
+
+  // Simple blunt-count-only level (no trophy gating, consistent with leaderboard display)
+  const PROFILE_LEVEL_DEFS = [
+    { level: 1, name: 'Rookie Smoker', badge: '🌿', min: 0,   max: 10 },
+    { level: 2, name: 'Daily Puff',    badge: '💨', min: 11,  max: 50 },
+    { level: 3, name: 'Rotation King', badge: '🔥', min: 51,  max: 150 },
+    { level: 4, name: 'Iron Lungs',    badge: '😤', min: 151, max: 300 },
+    { level: 5, name: 'Snoop Dogg Status', badge: '👑', min: 301, max: 999999 },
+  ];
+  const getProfileLevel = (blunts) => {
+    for (let i = PROFILE_LEVEL_DEFS.length - 1; i >= 0; i--) {
+      if (blunts >= PROFILE_LEVEL_DEFS[i].min) return PROFILE_LEVEL_DEFS[i];
+    }
+    return PROFILE_LEVEL_DEFS[0];
+  };
+
+  const memoizedProfileStats = React.useMemo(() => {
+    const totalBlunts = profileData.reduce((sum, day) => sum + (day.blunts?.length || 0), 0);
+    const achievements = calculateAchievements(profileData, { username });
+    const currentLevel = getProfileLevel(totalBlunts);
+    return {
+      totalBlunts,
+      currentLevel,
+      totalCost: mockData.calculateTotalCost(profileData),
+      achievements
+    };
+  }, [profileData, username]);
+
+  const chartData_full = React.useMemo(
+    () => mockData.getChartData(profileData, chartView, chartMonthOffset),
+    [profileData, chartView, chartMonthOffset]
+  );
+
+  const chartData = React.useMemo(
+    () => ({
+      labels: chartData_full.map((d) => d.label),
+      datasets: [
+        {
+          label: 'Blunts',
+          data: chartData_full.map((d) => d.bluntCount || 0),
+          borderColor: '#00ff41',
+          backgroundColor: 'rgba(0, 255, 65, 0.08)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#00ff41',
+          pointBorderColor: '#00ff41',
+          pointBorderWidth: 1,
+        },
+      ],
+    }),
+    [chartData_full]
+  );
+
+  const chartOptions = React.useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        title: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          titleColor: '#00ff41',
+          bodyColor: '#ffffff',
+          borderColor: '#00ff41',
+          borderWidth: 1,
+          cornerRadius: 8,
+          callbacks: {
+            label: (context) => {
+              const value = Math.max(0, context.parsed.y);
+              const entry = chartData_full[context.dataIndex];
+              if (chartView === 'annual' && entry) {
+                return [`Total: ${entry.bluntCount} Blunts`, `Avg: ${(parseFloat(entry.avgBlunts) * 7).toFixed(1)}/wk`];
+              }
+              return `${value} blunts`;
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          min: 0,
+          grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+          border: { display: false },
+          ticks: {
+            color: '#6B7280',
+            font: { size: 10 },
+            callback: (v) => Math.max(0, Math.floor(v)),
+            stepSize: 1,
+            maxTicksLimit: 5,
+          },
+        },
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: '#6B7280',
+            font: { size: 10 },
+            maxRotation: 0,
+            maxTicksLimit: chartView === 'daily' ? 15 : 12,
+          },
+        },
+      },
+      animation: { duration: 800, easing: 'easeInOutQuart' },
+    }),
+    [chartView, chartData_full]
+  );
+
+  const earnedBadges = React.useMemo(() => {
+    const achs = memoizedProfileStats.achievements;
+    if (!achs?.optional) return [];
+    return achs.optional.filter(a => a.achieved);
+  }, [memoizedProfileStats.achievements]);
+
+  const { currentLevel } = memoizedProfileStats;
+  // Level progress: blunts needed to reach next level
+  const levelDefs = [
+    { level: 1, min: 0, max: 10 },
+    { level: 2, min: 11, max: 50 },
+    { level: 3, min: 51, max: 150 },
+    { level: 4, min: 151, max: 300 },
+    { level: 5, min: 301, max: 999999 },
+  ];
+  const lvlDef = levelDefs.find(l => l.level === currentLevel.level) || levelDefs[0];
+  const lvlProgress = lvlDef.max < 999999
+    ? Math.min(100, ((memoizedProfileStats.totalBlunts - lvlDef.min) / (lvlDef.max - lvlDef.min)) * 100)
+    : 100;
+
+  if (!username) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        />
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#070707] border border-white/10 rounded-3xl shadow-2xl z-10 flex flex-col"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: '#2eef6a transparent' }}
+        >
+          {/* ─── Header ─── */}
+          <div className="sticky top-0 z-20 bg-[#070707]/95 backdrop-blur-md border-b border-white/5 px-6 py-5 flex items-center justify-between">
+            <h2 className="text-2xl md:text-3xl font-black text-white truncate" style={{ fontFamily: "'UnifrakturMaguntia', cursive" }}>
+              {username}
+            </h2>
+            <button onClick={onClose} className="ml-4 flex-shrink-0 p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-5 md:p-6 flex flex-col gap-5">
+            {loading ? (
+              <div className="text-center py-20">
+                <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="font-mono text-gray-500 text-sm">Decrypting records...</p>
+              </div>
+            ) : (
+              <>
+                {/* ─── Level Bar (full width) ─── */}
+                <div className="bg-gray-950/60 rounded-2xl border border-white/5 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Level</span>
+                    <span className="text-[10px] font-black text-[#2eef6a] uppercase tracking-widest">
+                      {currentLevel.badge} {currentLevel.level} — {currentLevel.name}
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-gray-800/80 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-[#2eef6a] to-emerald-400 shadow-[0_0_10px_rgba(46,239,106,0.5)]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${lvlProgress}%` }}
+                      transition={{ duration: 1, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-gray-600 mt-1.5 text-right">
+                    {memoizedProfileStats.totalBlunts} blunts{lvlDef.max < 999999 ? ` / ${lvlDef.max} to next` : ' — Max Level'}
+                  </p>
+                </div>
+
+                {/* ─── Badges ─── */}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Achievements</p>
+                  {earnedBadges.length === 0 ? (
+                    <p className="text-xs text-gray-600 italic py-3 text-center">No achievements unlocked yet.</p>
+                  ) : (
+                    <div
+                      className="flex gap-2 overflow-x-auto pb-2"
+                      style={{ scrollbarWidth: 'thin', scrollbarColor: '#2eef6a transparent' }}
+                    >
+                      {earnedBadges.map(a => (
+                        <div
+                          key={a.id}
+                          title={a.name}
+                          onClick={() => setSelectedBadge(a)}
+                          className="flex-shrink-0 flex flex-col items-center gap-1 bg-gray-950/60 border border-white/5 rounded-2xl px-3 py-2 min-w-[56px] cursor-pointer hover:bg-white/10 transition-colors"
+                        >
+                          <span className="text-2xl drop-shadow-md">{a.icon}</span>
+                          <span className="text-[8px] text-gray-400 font-bold text-center leading-tight w-12 truncate">{a.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── Stats row ─── */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-950/60 p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center text-center">
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-1">Total Blunts</p>
+                    <p className="text-3xl font-black text-[#2eef6a] font-mono">{memoizedProfileStats.totalBlunts || 0}</p>
+                  </div>
+                  <div className="bg-gray-950/60 p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center text-center">
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-1">Total Invested</p>
+                    <p className="text-3xl font-black text-yellow-400 font-mono">{(memoizedProfileStats.totalCost || 0).toFixed(0)}€</p>
+                  </div>
+                </div>
+
+                {/* ─── Chart ─── */}
+                <div className="bg-gray-950/60 rounded-2xl border border-white/5 p-4">
+                  {/* View toggle + month nav */}
+                  <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                    <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                      {['daily', 'annual'].map(v => (
+                        <button
+                          key={v}
+                          onClick={() => setChartView(v)}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${chartView === v ? 'bg-[#2eef6a] text-black' : 'text-gray-500 hover:text-white'}`}
+                        >
+                          {v === 'daily' ? 'Monthly' : 'Annual'}
+                        </button>
+                      ))}
+                    </div>
+                    {chartView === 'daily' && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setChartMonthOffset(p => p - 1)} className="p-1 hover:bg-white/5 rounded-lg text-gray-500 transition-colors">
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs font-bold text-white min-w-[110px] text-center">
+                          {(() => { const d = new Date(); d.setMonth(d.getMonth() + chartMonthOffset); return d.toLocaleString('en-US', { month: 'long', year: 'numeric' }); })()}
+                        </span>
+                        <button onClick={() => setChartMonthOffset(p => p + 1)} className="p-1 hover:bg-white/5 rounded-lg text-gray-500 transition-colors">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-[220px]">
+                    {chartData && chartOptions && <Line options={chartOptions} data={chartData} />}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ─── Badge Details Modal ─── */}
+        <AnimatePresence>
+          {selectedBadge && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+              onClick={() => setSelectedBadge(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative bg-[#070707] border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center"
+              >
+                <div className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] mb-4">{selectedBadge.icon}</div>
+                <div className="text-xl font-black font-sans text-white uppercase tracking-wider mb-2">{selectedBadge.name}</div>
+                <p className="text-sm text-gray-400 leading-relaxed mb-6">
+                  {selectedBadge.description || "Insignia desbloqueada por méritos honoríficos en el consumo de blunts."}
+                </p>
+                <button
+                  onClick={() => setSelectedBadge(null)}
+                  className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-xs uppercase tracking-widest text-[#2eef6a] transition-colors"
+                >
+                  Cerrar
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </AnimatePresence>,
+    document.body
+  );
+});
+UserProfileModal.displayName = 'UserProfileModal';
+
+
+
 const Dashboard = React.memo(
   ({
     consumptionData,
@@ -690,6 +1172,7 @@ const Dashboard = React.memo(
     const [showAIInsights, setShowAIInsights] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
     const [selectedTrophy, setSelectedTrophy] = useState(null);
+    const [selectedUserProfile, setSelectedUserProfile] = useState(null);
     const chartRef = useRef(null);
 
     useEffect(() => {
@@ -1005,7 +1488,7 @@ const Dashboard = React.memo(
               className="space-y-6 transform-gpu"
               style={{ willChange: 'opacity' }}
             >
-                    {/* --- HOME VIEW --- */}
+              {/* --- HOME VIEW --- */}
               {activeTab === 'home' && (
                 <HomeView 
                   todayQuote={todayQuote}
@@ -1015,6 +1498,7 @@ const Dashboard = React.memo(
                   currentUser={currentUser}
                   onDrinkSelect={onDrinkSelect}
                   isTransitioning={isTransitioning}
+                  onUserClick={setSelectedUserProfile}
                 />
               )}
 
@@ -1043,6 +1527,7 @@ const Dashboard = React.memo(
                 <LeaderboardView 
                   leaderboardData={leaderboardData}
                   getPlayerRankInfo={getPlayerRankInfo}
+                  onUserClick={setSelectedUserProfile}
                 />
               )}
               {/* --- TROPHIES VIEW --- */}
@@ -1151,6 +1636,14 @@ const Dashboard = React.memo(
             </div>
           </AnimatePresence>,
           document.body
+        )}
+        
+        {/* User Profile Modal */}
+        {selectedUserProfile && (
+          <UserProfileModal 
+            username={selectedUserProfile} 
+            onClose={() => setSelectedUserProfile(null)} 
+          />
         )}
       </div>
     );

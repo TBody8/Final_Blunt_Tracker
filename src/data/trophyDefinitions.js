@@ -40,5 +40,9 @@ export const OPTIONAL_ACHIEVEMENTS = [
   { id: 'fat_blunt', name: 'El Gordo', icon: '🪵', description: 'Roll or participate in a blunt weighing 1.5g or more.', type: 'fatty_blunt', goal: 1 },
   { id: 'explorer', name: 'Explorer', icon: '🗺️', description: 'Smoke blunts in 5 completely different spots.', type: 'spot_explorer', goal: 5 },
   { id: 'chimney', name: 'La Chimenea', icon: '🏭', description: 'Smoke 5 or more blunts in a single day.', type: 'daily_max', goal: 5 },
-  { id: 'heavyweight', name: 'Heavyweight', icon: '🏋️‍♂️', description: 'Smoke a cumulative total of 10 grams over time.', type: 'total_weight', goal: 10 }
+  { id: 'heavyweight', name: 'Heavyweight', icon: '🏋️‍♂️', description: 'Smoke a cumulative total of 10 grams over time.', type: 'total_weight', goal: 10 },
+  { id: 'insomne', name: 'El Insomne', icon: '🌙', description: 'Smoke 5 blunts between 2:00 AM and 5:00 AM.', type: 'late_night', goal: 5 },
+  { id: 'wallet', name: '¿Dónde Fue Mi Dinero?', icon: '💶', description: 'Spend more than 75€ in total on blunts.', type: 'total_cost', goal: 75 },
+  { id: 'mecenas', name: 'El Mecenas', icon: '🎭', description: 'Pay for a group session of 4 or more people, 5 times.', type: 'sponsor_group', goal: 5 },
+  { id: 'fantasma', name: 'El Fantasma', icon: '💀', description: 'Smoke 50 blunts completely alone, with no one else present.', type: 'solo_smokes', goal: 50 }
 ];

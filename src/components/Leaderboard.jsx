@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Trophy, Flame, Coins, MapPin, Star, Zap } from 'lucide-react';
 import Loader from './ui/Loader';
+import { UserProfileModal } from './Dashboard';
 import { bluntDrinks } from '../data/mockData';
 
 const getDrinkName = (id) => bluntDrinks.find(d => String(d.id) === String(id))?.name || 'Unknown';
@@ -46,6 +47,8 @@ export default function Leaderboard({ onClose }) {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [rankView, setRankView] = useState('monthly');
+  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
 
   // Block background scroll when the modal is open
   useEffect(() => {
@@ -57,9 +60,11 @@ export default function Leaderboard({ onClose }) {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-        const res = await fetch(`${backendUrl}/api/leaderboard?t=${Date.now()}`, {
+        const res = await fetch(`${backendUrl}/api/leaderboard?type=${rankView}&t=${Date.now()}`, {
           credentials: 'include',
           cache: 'no-store'
         });
@@ -76,7 +81,7 @@ export default function Leaderboard({ onClose }) {
     };
 
     fetchLeaderboard();
-  }, []);
+  }, [rankView]);
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/80 backdrop-blur-sm'>
@@ -96,6 +101,11 @@ export default function Leaderboard({ onClose }) {
             <div>
               <h2 className="text-2xl md:text-4xl blunt-title text-[#2ecc71] drop-shadow-sm">Top Smokers</h2>
               <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mt-0.5">The most legendary lungs in the community</p>
+              
+              <div className='flex gap-2 bg-gray-950/60 p-1.5 rounded-2xl border border-white/10 shadow-lg shrink-0 mt-3 max-w-[fit-content]'>
+                <button onClick={() => setRankView('monthly')} className={`px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 transform-gpu ${rankView === 'monthly' ? 'bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'text-gray-500 hover:text-white'}`}>Mensual</button>
+                <button onClick={() => setRankView('general')} className={`px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 transform-gpu ${rankView === 'general' ? 'bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'text-gray-500 hover:text-white'}`}>General</button>
+              </div>
             </div>
           </div>
           <button 
@@ -138,7 +148,7 @@ export default function Leaderboard({ onClose }) {
               {leaderboardData
                 .sort((a, b) => (b.totalBluntsCount || 0) - (a.totalBluntsCount || 0))
                 .map((user, index) => {
-                  const rankInfo = getPlayerRankInfo(user.totalBluntsCount || 0);
+                  const rankInfo = getPlayerRankInfo(user.realTotalBlunts ?? user.totalBluntsCount ?? 0);
                   const isFirst = index === 0;
                   
                   return (
@@ -155,7 +165,10 @@ export default function Leaderboard({ onClose }) {
                       {/* Right Neon Scrollbar-ish detail */}
                       <div className={`absolute top-1/2 -translate-y-1/2 right-1 h-[60%] w-2 rounded-full ${isFirst ? 'bg-[#2eef6a] shadow-[0_0_15px_#2eef6a]' : 'bg-gray-800 opacity-20'}`} />
 
-                      <div className="flex flex-col items-center">
+                      <div 
+                        className="flex flex-col items-center cursor-pointer w-full h-full"
+                        onClick={() => setSelectedUserProfile(user.username)}
+                      >
                         {/* Avatar Flanked by Medals Layout */}
                         <div className="relative mb-6 flex flex-row items-center justify-center w-full gap-4 sm:gap-8">
                            
@@ -268,6 +281,12 @@ export default function Leaderboard({ onClose }) {
             </div>
           )}
         </div>
+        {selectedUserProfile && (
+          <UserProfileModal 
+            username={selectedUserProfile} 
+            onClose={() => setSelectedUserProfile(null)} 
+          />
+        )}
       </div>
     </motion.div>
     </div>
